@@ -1,0 +1,69 @@
+# Cadastro das empresas, bancos e contas cobertos pela automação de
+# fechamento bancário mensal. Nenhum segredo (senha, token, client_secret,
+# certificado) fica neste arquivo — apenas identificadores e metadados
+# públicos. Credenciais vivem como variáveis de ambiente/segredos do
+# ambiente de execução (ver docs/setup-bancos.md).
+
+empresas:
+  - id: dpa
+    razao_social: "Distribuidora Peres & Araújo Ltda"
+    cnpj: "21.641.059/0001-39"
+    status: ativo
+
+    # IDs de pasta do Google Drive (raiz fixa; ano/mês/banco são
+    # localizados ou criados dinamicamente pela automação a cada execução)
+    drive:
+      financeiro_id: "1ywaJfj8hH01yFTvMFWOixgnTOsqgQoqs"   # 01. Financeiro
+      bancario_id: "17c-l7WowEnWcaToj-lf5KEDPGWXrtncz"      # 01.2 Bancário
+      extratos_id: "1V8K7lv2vtJbNGWHs4js-Vm1z-MNFH1Ba"      # Extratos
+
+    bancos:
+      - id: inter
+        nome_exibicao: "Inter"
+        codigo_padrao_nome: "INTER"          # usado no nome do arquivo
+        conta: "A CONFIRMAR"                  # número da conta corrente
+        agencia: "A CONFIRMAR"
+        integracao:
+          tipo: api_oficial
+          provider: banco_inter
+          status: pendente_credenciais         # pendente_credenciais | ativo | erro
+          escopo_necessario: "extrato (somente leitura)"
+          credenciais_env:
+            client_id: DPA_INTER_CLIENT_ID
+            client_secret: DPA_INTER_CLIENT_SECRET
+            certificado: DPA_INTER_CERT_CRT
+            chave_privada: DPA_INTER_CERT_KEY
+
+      - id: santander
+        nome_exibicao: "Santander"
+        codigo_padrao_nome: "SANTANDER"
+        conta: "A CONFIRMAR"
+        agencia: "A CONFIRMAR"
+        integracao:
+          tipo: api_oficial
+          provider: santander_developers
+          status: pendente_cadastro             # ainda não iniciado
+          escopo_necessario: "extrato (somente leitura)"
+          credenciais_env:
+            client_id: DPA_SANTANDER_CLIENT_ID
+            client_secret: DPA_SANTANDER_CLIENT_SECRET
+            certificado: DPA_SANTANDER_CERT_CRT
+            chave_privada: DPA_SANTANDER_CERT_KEY
+
+      - id: sicoob
+        nome_exibicao: "Sicoob"
+        codigo_padrao_nome: "SICOOB"
+        conta: "A CONFIRMAR"
+        agencia: "A CONFIRMAR"
+        integracao:
+          tipo: api_oficial
+          provider: sicoob_developers
+          status: pendente_cadastro
+          escopo_necessario: "conta corrente / extrato (somente leitura)"
+          credenciais_env:
+            client_id: DPA_SICOOB_CLIENT_ID
+            certificado_pfx: DPA_SICOOB_CERT_PFX
+            certificado_pfx_senha: DPA_SICOOB_CERT_PFX_SENHA
+
+# Fora de escopo (não são conta corrente para conciliação de extrato):
+# - Pronampe (linha de crédito, comprovantes tratados à parte)
