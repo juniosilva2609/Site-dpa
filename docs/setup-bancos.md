@@ -45,16 +45,32 @@ Fonte: [developers.sicoob.com.br](https://developers.sicoob.com.br/portal/#!/log
 5. Selecione o produto **Conta Corrente** (extrato/saldo).
 6. Envie o `.cer` para gerar o **ClientID**.
 7. O `.pfx` (com senha) é usado depois na autenticação mTLS das chamadas.
+8. Converta o `.pfx` uma única vez para o formato que o conector usa
+   (`connectors/sicoob.py` já espera isso):
+   ```
+   openssl pkcs12 -in certificado.pfx -clcerts -nokeys -out sicoob_cert.pem
+   openssl pkcs12 -in certificado.pfx -nocerts -nodes -out sicoob_key.pem
+   ```
 
 Variáveis de ambiente esperadas:
-`DPA_SICOOB_CLIENT_ID`, `DPA_SICOOB_CERT_PFX`, `DPA_SICOOB_CERT_PFX_SENHA`.
+`DPA_SICOOB_CLIENT_ID`, `DPA_SICOOB_CERT_PEM` (caminho do .pem gerado acima),
+`DPA_SICOOB_CERT_KEY` (caminho do .pem da chave).
 
 ## Santander
 
-Portal: Santander Developers Brasil (developers.santander.com.br) — cadastro
-de aplicação PJ com certificado mTLS, nos mesmos moldes dos bancos acima.
-Vou detalhar o passo a passo exato quando você for iniciar esse cadastro,
-para confirmar a tela atual do portal antes de te passar instruções.
+Fonte: [Santander Developers Brasil](https://developer.santander.com.br).
+
+1. Acesse developer.santander.com.br → **Entrar → Entrar como administrador**
+   com os dados da empresa.
+2. **Criar Aplicação em Produção**.
+3. Selecione a API **Balance and Extract** (saldo e extrato).
+4. Informe um nome para a aplicação e envie o certificado digital.
+   O certificado precisa: ser x509 v3, ter no mínimo 90 dias de validade,
+   estar em formato PEM, ter "Key Usage" com assinatura digital habilitada
+   e "Enhanced Key Usage" incluindo Client Authentication
+   (`1.3.6.1.5.5.7.3.2`) — inclua também os arquivos de certificado raiz e
+   intermediário da cadeia.
+5. Ao concluir, são gerados **ClientID** e **ClientSecret**.
 
 Variáveis de ambiente esperadas:
 `DPA_SANTANDER_CLIENT_ID`, `DPA_SANTANDER_CLIENT_SECRET`,

@@ -62,8 +62,8 @@ empresas:
           escopo_necessario: "conta corrente / extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_SICOOB_CLIENT_ID
-            certificado_pfx: DPA_SICOOB_CERT_PFX
-            certificado_pfx_senha: DPA_SICOOB_CERT_PFX_SENHA
+            certificado_pem: DPA_SICOOB_CERT_PEM   # convertido a partir do .pfx, ver docs/setup-bancos.md
+            chave_privada: DPA_SICOOB_CERT_KEY
 
 # Fora de escopo (não são conta corrente para conciliação de extrato):
 # - Pronampe (linha de crédito, comprovantes tratados à parte)

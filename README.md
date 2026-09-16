@@ -16,6 +16,10 @@ ou qualquer movimentação financeira.
 - `docs/setup-bancos.md` — passo a passo para liberar a API de cada banco.
 - `docs/processo-fechamento.md` — roteiro que a rotina agendada executa a
   cada disparo.
+- `connectors/` — código de autenticação e download por banco (`inter.py`,
+  `sicoob.py`); pronto para funcionar assim que as credenciais forem
+  configuradas como variável de ambiente. Endpoints exatos devem ser
+  reconferidos no portal do banco no momento da ativação.
 
 ## Status atual
 

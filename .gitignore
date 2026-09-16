@@ -1,0 +1,12 @@
+# Nunca versionar segredos ou certificados
+*.pem
+*.crt
+*.key
+*.pfx
+*.cer
+.env
+.env.*
+
+__pycache__/
+*.pyc
+.venv/
