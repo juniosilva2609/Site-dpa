@@ -76,9 +76,20 @@ Variáveis de ambiente esperadas:
 `DPA_SANTANDER_CLIENT_ID`, `DPA_SANTANDER_CLIENT_SECRET`,
 `DPA_SANTANDER_CERT_CRT`, `DPA_SANTANDER_CERT_KEY`.
 
+## Como as credenciais ficam guardadas neste ambiente
+
+Este ambiente não oferece um mecanismo de "variável de ambiente" permanente
+configurável por mim. Na prática, guardo cada credencial num arquivo local
+em `~/.dpa-secrets/<banco>.env` (fora do repositório, com permissão 600,
+nunca versionado — o `.gitignore` do repo também bloqueia qualquer `.env`,
+`.pem`, `.crt`, `.key` ou `.pfx` por segurança extra). A Rotina agendada
+reaproveita esta mesma sessão a cada disparo, então esse arquivo continua
+disponível de execução para execução; na hora de rodar um conector, eu
+carrego essas variáveis a partir dali antes de chamar a API do banco.
+
 ## Como me repassar as credenciais
 
 Não cole client_secret, senha de certificado ou o conteúdo do .crt/.key/.pfx
-diretamente na conversa se puder evitar. Prefira que eu te oriente a
-configurá-los como variável de ambiente/segredo deste ambiente de execução
-assim que estivermos prontos para ativar aquele banco.
+diretamente na conversa se puder evitar. Client ID sozinho costuma ser
+seguro de compartilhar (o próprio Sicoob confirma isso), mas para
+certificado/segredo eu confirmo com você antes de armazenar.

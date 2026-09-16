@@ -58,7 +58,7 @@ empresas:
         integracao:
           tipo: api_oficial
           provider: sicoob_developers
-          status: pendente_cadastro
+          status: pendente_certificado   # client_id já obtido; falta o certificado mTLS
           escopo_necessario: "conta corrente / extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_SICOOB_CLIENT_ID
