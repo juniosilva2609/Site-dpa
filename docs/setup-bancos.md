@@ -9,16 +9,18 @@ Peça sempre o escopo mínimo: **consulta de extrato/saldo**. Nunca solicite
 escopos de pagamento, transferência, PIX ou emissão de cobrança para esta
 automação.
 
-## Pré-requisito de ambiente: liberar a rede
+## Pré-requisito de ambiente: liberar a rede (✅ resolvido em 16/09/2026)
 
-Descobrimos (testando o Sicoob) que este ambiente de execução roda com uma
-política de rede restritiva ("trusted network access") que **bloqueia
-qualquer chamada de saída para domínios de banco** por padrão — a chamada
-nem chega a sair do contêiner, então nenhuma credencial resolve isso
-sozinha. Antes de ativar qualquer banco, é preciso trocar a política de
-rede deste ambiente (em claude.ai/code → configurações do ambiente) para
-uma que permita acesso amplo/externo. Isso só precisa ser feito uma vez
-para valer para todos os bancos.
+Descobrimos (testando o Sicoob) que este ambiente de execução rodava com
+uma política de rede restritiva ("trusted network access") que bloqueava
+qualquer chamada de saída para domínios de banco — a chamada nem chegava a
+sair do contêiner, então nenhuma credencial resolvia isso sozinha. O
+usuário trocou a política de rede do ambiente (em claude.ai/code →
+configurações do ambiente) e confirmamos, com uma chamada real à API do
+Sicoob, que a saída para `auth.sicoob.com.br` e `api.sicoob.com.br` agora
+funciona. Deixando registrado aqui: se um novo ambiente for criado do zero
+para esta automação, esse mesmo ajuste de rede precisa ser feito de novo
+antes de qualquer banco funcionar.
 
 ## Banco Inter
 

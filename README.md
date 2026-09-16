@@ -27,12 +27,11 @@ ou qualquer movimentação financeira.
 |---|---|
 | Inter | pendente de credenciais (nova integração a ser criada) |
 | Santander | pendente de cadastro |
-| Sicoob | credenciais e certificado prontos — **bloqueado pela política de rede do ambiente** (ver `docs/setup-bancos.md`) |
+| Sicoob | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, consulta de extrato real da competência 09-2026-Q1, arquivos OFX e Excel organizados no Drive). PDF ainda não é gerado. |
 
-⚠️ **Bloqueio atual, afeta todos os bancos**: a política de rede deste
-ambiente ("trusted network access") não permite saída para domínios de
-banco. Precisa ser trocada para uma política de acesso amplo antes de
-qualquer banco funcionar de verdade.
+A política de rede restritiva do ambiente ("trusted network access", que
+bloqueava saída para domínios de banco) já foi trocada e resolvida — ver
+histórico em `docs/setup-bancos.md`.
 
 ## Como adicionar um banco novo
 
