@@ -55,13 +55,15 @@ empresas:
         codigo_padrao_nome: "SICOOB"
         conta: "68.534-8"
         agencia: "4030"
+        cooperativa: "4030-4"           # número da cooperativa com dígito, usado no PDF
+        cooperativa_nome: "SICOOB DIVICRED"
         integracao:
           tipo: api_oficial
           provider: sicoob_developers
           # Validado de ponta a ponta em 16/09/2026: autenticação real +
           # consulta de extrato real (competência 09-2026-Q1) + upload no
-          # Drive. PDF ainda não é gerado (só OFX e Excel) — ver TODO em
-          # connectors/sicoob.py.
+          # Drive, incluindo PDF gerado no layout do internet banking
+          # (connectors/sicoob_pdf.py).
           status: ativo
           escopo_necessario: "conta corrente / extrato (somente leitura)"
           credenciais_env:

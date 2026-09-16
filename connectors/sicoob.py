@@ -20,9 +20,10 @@ Contrato confirmado por teste real em produção (16/09/2026):
     pontuação/hífen, ex: "685348" para a conta 68.534-8) e apenas o
     header Authorization (client_id como header não é necessário aqui).
   - A resposta é só JSON (saldoAtual, saldoAnterior, transacoes[...]).
-    O Sicoob não oferece exportação nativa em PDF/OFX nesse endpoint —
-    por isso este conector gera o OFX e a planilha localmente a partir
-    do JSON; PDF ainda não está implementado (ver TODO abaixo).
+    O Sicoob não oferece exportação nativa em PDF/OFX/Excel nesse
+    endpoint — por isso este conector gera os três formatos localmente a
+    partir do JSON (OFX e Excel aqui; PDF no mesmo layout do internet
+    banking está em sicoob_pdf.py).
 """
 
 import os
@@ -46,12 +47,15 @@ def _numero_conta_sem_pontuacao(conta: str) -> str:
 class SicoobConnector(BankConnector):
     nome = "Sicoob"
 
-    def __init__(self):
+    def __init__(self, cooperativa: str, cooperativa_nome: str, razao_social: str):
         self.client_id = os.environ["DPA_SICOOB_CLIENT_ID"]
         self.cert = (
             os.environ["DPA_SICOOB_CERT_PEM"],
             os.environ["DPA_SICOOB_CERT_KEY"],
         )
+        self.cooperativa = cooperativa
+        self.cooperativa_nome = cooperativa_nome
+        self.razao_social = razao_social
         self._token: str | None = None
 
     def autenticar(self) -> None:
@@ -92,11 +96,19 @@ class SicoobConnector(BankConnector):
         ofx = _gerar_ofx(transacoes, conta, inicio, fim).encode("utf-8")
         xlsx = _gerar_xlsx(transacoes)
 
-        # TODO: gerar PDF (layout próprio) a partir do mesmo JSON —
-        # o Sicoob não oferece exportação nativa em PDF nesse endpoint.
-        indisponiveis = ["PDF"]
+        from .sicoob_pdf import gerar_pdf
 
-        return Extrato(pdf=None, ofx=ofx, xlsx=xlsx, indisponiveis=indisponiveis)
+        pdf = gerar_pdf(
+            dados,
+            conta=conta,
+            cooperativa=self.cooperativa,
+            cooperativa_nome=self.cooperativa_nome,
+            razao_social=self.razao_social,
+            inicio=inicio,
+            fim=fim,
+        )
+
+        return Extrato(pdf=pdf, ofx=ofx, xlsx=xlsx, indisponiveis=None)
 
 
 def _gerar_ofx(transacoes: list[dict], conta: str, inicio: date, fim: date) -> str:
