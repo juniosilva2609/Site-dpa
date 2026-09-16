@@ -21,15 +21,14 @@ empresas:
       - id: inter
         nome_exibicao: "Inter"
         codigo_padrao_nome: "INTER"          # usado no nome do arquivo
-        conta: "A CONFIRMAR"                  # número da conta corrente — falta você informar
-        agencia: "A CONFIRMAR"
+        conta: "3620284-3"
+        agencia: "0001"
         integracao:
           tipo: api_oficial
           provider: banco_inter
           # Validado de ponta a ponta em 16/09/2026: autenticação real +
           # extrato real (JSON) + PDF nativo da API + OFX/Excel gerados
-          # localmente (a API do Inter não exporta OFX/Excel). Falta só
-          # a agência/conta acima para nomear os arquivos corretamente.
+          # localmente (a API do Inter não exporta OFX/Excel).
           status: ativo
           escopo_necessario: "extrato.read (somente leitura)"
           credenciais_env:
