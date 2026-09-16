@@ -53,12 +53,17 @@ empresas:
       - id: sicoob
         nome_exibicao: "Sicoob"
         codigo_padrao_nome: "SICOOB"
-        conta: "A CONFIRMAR"
-        agencia: "A CONFIRMAR"
+        conta: "68.534-8"
+        agencia: "4030"
         integracao:
           tipo: api_oficial
           provider: sicoob_developers
-          status: pendente_certificado   # client_id já obtido; falta o certificado mTLS
+          # Credenciais e certificado mTLS já configurados e validados
+          # localmente. Falta liberar a política de rede deste ambiente
+          # (hoje "trusted network access") para permitir saída até
+          # auth.sicoob.com.br / api.sicoob.com.br — sem isso a chamada
+          # nunca sai do contêiner. Ver docs/setup-bancos.md.
+          status: bloqueado_rede
           escopo_necessario: "conta corrente / extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_SICOOB_CLIENT_ID

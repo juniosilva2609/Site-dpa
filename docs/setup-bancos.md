@@ -9,6 +9,17 @@ Peça sempre o escopo mínimo: **consulta de extrato/saldo**. Nunca solicite
 escopos de pagamento, transferência, PIX ou emissão de cobrança para esta
 automação.
 
+## Pré-requisito de ambiente: liberar a rede
+
+Descobrimos (testando o Sicoob) que este ambiente de execução roda com uma
+política de rede restritiva ("trusted network access") que **bloqueia
+qualquer chamada de saída para domínios de banco** por padrão — a chamada
+nem chega a sair do contêiner, então nenhuma credencial resolve isso
+sozinha. Antes de ativar qualquer banco, é preciso trocar a política de
+rede deste ambiente (em claude.ai/code → configurações do ambiente) para
+uma que permita acesso amplo/externo. Isso só precisa ser feito uma vez
+para valer para todos os bancos.
+
 ## Banco Inter
 
 Fonte: [ajuda.inter.co](https://ajuda.inter.co/conta-digital-pessoa-juridica/como-cadastrar-uma-api) — disponível apenas para conta PJ (não PF/MEI).
@@ -46,10 +57,12 @@ Fonte: [developers.sicoob.com.br](https://developers.sicoob.com.br/portal/#!/log
 6. Envie o `.cer` para gerar o **ClientID**.
 7. O `.pfx` (com senha) é usado depois na autenticação mTLS das chamadas.
 8. Converta o `.pfx` uma única vez para o formato que o conector usa
-   (`connectors/sicoob.py` já espera isso):
+   (`connectors/sicoob.py` já espera isso). Certificados e-CNPJ mais
+   antigos usam criptografia RC2, que o OpenSSL 3.x não abre sem a flag
+   `-legacy`:
    ```
-   openssl pkcs12 -in certificado.pfx -clcerts -nokeys -out sicoob_cert.pem
-   openssl pkcs12 -in certificado.pfx -nocerts -nodes -out sicoob_key.pem
+   openssl pkcs12 -legacy -in certificado.pfx -clcerts -nokeys -out sicoob_cert.pem
+   openssl pkcs12 -legacy -in certificado.pfx -nocerts -nodes -out sicoob_key.pem
    ```
 
 Variáveis de ambiente esperadas:

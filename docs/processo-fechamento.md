@@ -2,8 +2,16 @@
 
 Este é o roteiro que a Rotina agendada segue a cada disparo (dia 1 e dia 16
 de cada mês). Só cobre bancos com `integracao.status: ativo` em
-`config/empresas.yaml` — os demais entram no relatório como pendentes de
-configuração, sem travar os outros.
+`config/empresas.yaml` — qualquer outro valor de status (pendente de
+cadastro, pendente de certificado, bloqueado por rede etc.) entra no
+relatório como pendente, sem travar os outros bancos.
+
+**Pré-requisito de ambiente**: a política de rede deste ambiente de
+execução precisa permitir saída para os domínios de API de cada banco
+ativo (ex: `auth.sicoob.com.br`, `api.sicoob.com.br`,
+`cdpj.partners.bancointer.com.br`). Por padrão o ambiente vem com uma
+política restritiva ("trusted network access") que bloqueia esses
+domínios — ver `docs/setup-bancos.md`.
 
 ## Passo a passo por empresa → banco
 
