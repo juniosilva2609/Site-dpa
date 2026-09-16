@@ -25,9 +25,9 @@ ou qualquer movimentação financeira.
 
 | Banco | Status |
 |---|---|
-| Inter | pendente de credenciais (nova integração a ser criada) |
+| Inter | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, PDF nativo da API, OFX/Excel gerados localmente). Falta só a agência/conta para nomear os arquivos. |
 | Santander | pendente de cadastro |
-| Sicoob | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, consulta de extrato real da competência 09-2026-Q1, arquivos OFX e Excel organizados no Drive). PDF ainda não é gerado. |
+| Sicoob | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, extrato real, PDF/OFX/Excel completos, arquivos organizados no Drive). |
 
 A política de rede restritiva do ambiente ("trusted network access", que
 bloqueava saída para domínios de banco) já foi trocada e resolvida — ver

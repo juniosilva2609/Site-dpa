@@ -43,6 +43,19 @@ Variáveis de ambiente esperadas (ver `config/empresas.yaml`):
 `DPA_INTER_CLIENT_ID`, `DPA_INTER_CLIENT_SECRET`, `DPA_INTER_CERT_CRT`,
 `DPA_INTER_CERT_KEY`.
 
+**✅ Ativado e testado em 16/09/2026** — contrato confirmado por chamada real:
+- Token: `POST /oauth/v2/token` (client_id + client_secret +
+  grant_type=client_credentials + escopo `extrato.read`, mTLS).
+- Lista de lançamentos (JSON): `GET /banking/v2/extrato?dataInicio=...&dataFim=...`.
+- PDF nativo: `GET /banking/v2/extrato/exportar` (mesmos parâmetros) —
+  devolve `{"pdf": "<base64>"}`. Parâmetros de formato (`tipoArquivo`,
+  `formato`) são ignorados: esse endpoint **só** devolve PDF.
+- **Não há exportação nativa de OFX nem Excel** nessa API — o conector
+  (`connectors/inter.py`) gera os dois localmente a partir do JSON.
+- Falta apenas você informar a **agência e o número da conta** do Inter
+  para completar o nome padronizado dos arquivos (`conta` em
+  `config/empresas.yaml` ainda está como "A CONFIRMAR").
+
 ## Sicoob
 
 Fonte: [developers.sicoob.com.br](https://developers.sicoob.com.br/portal/#!/login).
