@@ -1,23 +1,36 @@
-"""Gera o PDF de extrato do Sicoob no mesmo layout do internet banking
-(modelo enviado pelo usuário: "Extrato de Conta Corrente" impresso do
-SISBR/Internet Banking).
-
-A API do Sicoob não exporta PDF nativo — este módulo monta um HTML
-equivalente ao modelo do banco e usa o Chromium (via Playwright) para
-"imprimir" em PDF, igual ao que o próprio internet banking faz no
-navegador.
+"""Gera o PDF de extrato do Sicoob, inspirado no layout do internet
+banking (modelo enviado pelo usuário: "Extrato de Conta Corrente"
+impresso do SISBR/Internet Banking), mas montado diretamente com
+reportlab (fontes padrão do PDF, sem embutimento) em vez de HTML +
+Chromium — o Chromium sempre embute fontes subsetadas mesmo para nomes
+de fonte "padrão" (Arial/Helvetica), o que gera arquivos grandes demais
+para o limite de upload por chamada desta integração com o Google
+Drive. Com reportlab e Helvetica (uma das 14 fontes padrão do PDF), o
+arquivo fica bem mais leve, sem perder nenhum dado.
 
 Importante: só usamos aqui campos que a API realmente devolve
 (saldoAtual, saldoAnterior, saldoLimite, saldoBloqueado,
-saldoBloqueioJudicial, transacoes). Seções do modelo original que dependem
-de dados que essa API não fornece (juros/tarifas provisionados, encargos a
-vencer, condições do cheque especial) aparecem como "não disponível via
-API" — nunca preenchidas com valor inventado.
+saldoBloqueioJudicial, transacoes). Seções do modelo original que
+dependem de dados que essa API não fornece (juros/tarifas
+provisionados, encargos a vencer, condições do cheque especial)
+aparecem como "não disponível via API" — nunca preenchidas com valor
+inventado.
 """
 
 from datetime import date, datetime
+from io import BytesIO
 
-CHROMIUM_PATH = "/opt/pw-browsers/chromium-1194/chrome-linux/chrome"
+from reportlab.lib import colors
+from reportlab.lib.pagesizes import A4
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.units import mm
+from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+
+VERDE = colors.HexColor("#00995d")
+VERDE_ESCURO = colors.HexColor("#1e7a4f")
+VERMELHO = colors.HexColor("#c0392b")
+CINZA = colors.HexColor("#666666")
+FUNDO_SALDO = colors.HexColor("#f2f6f4")
 
 
 def _fmt_moeda(valor, sinal_credito_debito: bool = True) -> str:
@@ -53,35 +66,6 @@ def _saldos_por_dia(transacoes: list[dict], saldo_anterior: float) -> dict[str, 
     return saldo_final_do_dia
 
 
-def _linha_transacao(t: dict) -> str:
-    hora = datetime.fromisoformat(t["data"]).strftime("%d/%m")
-    doc = t.get("numeroDocumento") or ""
-    hist = t.get("descricao", "")
-    complemento = t.get("descInfComplementar", "")
-    valor = float(t["valor"])
-    valor_fmt = _fmt_moeda(-valor if t.get("tipo") == "DEBITO" else valor)
-    cor = "#c0392b" if t.get("tipo") == "DEBITO" else "#1e7a4f"
-    return f"""
-    <tr>
-      <td class="col-data">{hora}</td>
-      <td class="col-doc">{doc}</td>
-      <td class="col-hist">{hist}<br><span class="complemento">{complemento}</span></td>
-      <td class="col-valor" style="color:{cor}">{valor_fmt}</td>
-    </tr>"""
-
-
-def _linha_saldo_dia(dia_iso: str, saldo: float) -> str:
-    dia_fmt = datetime.fromisoformat(dia_iso).strftime("%d/%m")
-    cor = "#c0392b" if saldo < 0 else "#1e7a4f"
-    return f"""
-    <tr class="linha-saldo">
-      <td class="col-data">{dia_fmt}</td>
-      <td class="col-doc"></td>
-      <td class="col-hist">SALDO DO DIA</td>
-      <td class="col-valor" style="color:{cor}">{_fmt_moeda(saldo)}</td>
-    </tr>"""
-
-
 def gerar_pdf(
     dados: dict,
     conta: str,
@@ -102,100 +86,142 @@ def gerar_pdf(
     dias = _agrupar_por_dia(transacoes)
     saldos_dia = _saldos_por_dia(transacoes, saldo_anterior)
 
-    linhas_html = []
+    buf = BytesIO()
+    doc = SimpleDocTemplate(
+        buf,
+        pagesize=A4,
+        topMargin=14 * mm,
+        bottomMargin=14 * mm,
+        leftMargin=12 * mm,
+        rightMargin=12 * mm,
+    )
+
+    titulo = ParagraphStyle("titulo", fontName="Helvetica-Bold", fontSize=16, textColor=VERDE)
+    subtitulo = ParagraphStyle("subtitulo", fontName="Helvetica", fontSize=8, textColor=CINZA, leading=10)
+    secao = ParagraphStyle("secao", fontName="Helvetica-Bold", fontSize=11, spaceBefore=10, spaceAfter=4)
+    info = ParagraphStyle("info", fontName="Helvetica", fontSize=9, leading=13)
+    hist = ParagraphStyle("hist", fontName="Helvetica", fontSize=9, leading=11)
+    nota = ParagraphStyle("nota", fontName="Helvetica-Oblique", fontSize=7, textColor=colors.HexColor("#999999"))
+    rodape = ParagraphStyle("rodape", fontName="Helvetica", fontSize=7, textColor=CINZA)
+
+    elementos = [
+        Paragraph("SICOOB", titulo),
+        Paragraph(
+            "SISTEMA DE COOPERATIVAS DE CRÉDITO DO BRASIL — PLATAFORMA DE SERVIÇOS "
+            "FINANCEIROS DO SICOOB - SISBR",
+            subtitulo,
+        ),
+        Spacer(1, 8),
+        Paragraph(
+            f"<b>Cooperativa:</b> {cooperativa} / {cooperativa_nome}<br/>"
+            f"<b>Conta:</b> {conta} / {razao_social}<br/>"
+            f"<b>Período:</b> {inicio.strftime('%d/%m/%Y')} - {fim.strftime('%d/%m/%Y')} &nbsp;&nbsp; "
+            f"<b>Emitido em:</b> {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}",
+            info,
+        ),
+        Paragraph("HISTÓRICO DE MOVIMENTAÇÃO", secao),
+    ]
+
+    linhas = [["Data", "Documento", "Histórico", "Valor"]]
+    estilos_linha = []
+    row = 1
     for dia_iso, txs in dias:
         for t in txs:
-            linhas_html.append(_linha_transacao(t))
-        linhas_html.append(_linha_saldo_dia(dia_iso, saldos_dia[dia_iso]))
-    linhas_html.append(f"""
-    <tr class="linha-saldo">
-      <td class="col-data">{inicio.strftime('%d/%m')}</td>
-      <td class="col-doc"></td>
-      <td class="col-hist">SALDO ANTERIOR</td>
-      <td class="col-valor" style="color:{'#c0392b' if saldo_anterior < 0 else '#1e7a4f'}">{_fmt_moeda(saldo_anterior)}</td>
-    </tr>""")
+            dia_fmt = datetime.fromisoformat(t["data"]).strftime("%d/%m")
+            doc_num = t.get("numeroDocumento") or ""
+            texto_hist = t.get("descricao", "")
+            complemento = t.get("descInfComplementar", "")
+            hist_html = f"{texto_hist}<br/><font size=7 color='#666666'>{complemento}</font>" if complemento else texto_hist
+            valor = float(t["valor"])
+            debito = t.get("tipo") == "DEBITO"
+            valor_fmt = _fmt_moeda(-valor if debito else valor)
+            linhas.append([dia_fmt, doc_num, Paragraph(hist_html, hist), valor_fmt])
+            estilos_linha.append(("TEXTCOLOR", (3, row), (3, row), VERMELHO if debito else VERDE_ESCURO))
+            row += 1
 
-    agora = datetime.now().strftime("%d/%m/%Y - %H:%M:%S")
+        saldo_dia = saldos_dia[dia_iso]
+        dia_fmt = datetime.fromisoformat(dia_iso).strftime("%d/%m")
+        linhas.append([dia_fmt, "", "SALDO DO DIA", _fmt_moeda(saldo_dia)])
+        estilos_linha += [
+            ("FONTNAME", (0, row), (-1, row), "Helvetica-Bold"),
+            ("BACKGROUND", (0, row), (-1, row), FUNDO_SALDO),
+            ("TEXTCOLOR", (3, row), (3, row), VERMELHO if saldo_dia < 0 else VERDE_ESCURO),
+        ]
+        row += 1
 
-    html = f"""<!doctype html><html><head><meta charset="utf-8"><style>
-    body {{ font-family: Arial, Helvetica, sans-serif; font-size: 12px; color: #222; margin: 24px; }}
-    .cabecalho {{ display:flex; align-items:center; gap:10px; border-bottom: 2px solid #00995d; padding-bottom: 8px; }}
-    .cabecalho .logo {{ color:#00995d; font-weight:bold; font-size:20px; }}
-    .cabecalho .titulos {{ font-size:11px; font-weight:bold; line-height:1.3; }}
-    .titulo-extrato {{ display:flex; justify-content:space-between; align-items:center; margin-top:14px; font-weight:bold; font-size:14px; }}
-    .info {{ margin-top:10px; display:grid; grid-template-columns:100px 1fr; row-gap:2px; }}
-    .info b {{ font-weight:bold; }}
-    h2.secao {{ font-size:12px; margin:18px 0 6px; border-bottom:1px solid #ccc; padding-bottom:4px; }}
-    table {{ width:100%; border-collapse:collapse; }}
-    th {{ text-align:left; border-bottom:1px solid #999; padding:4px 6px; font-size:11px; }}
-    th.col-valor, td.col-valor {{ text-align:right; }}
-    td {{ padding:4px 6px; vertical-align:top; font-size:11px; }}
-    .complemento {{ color:#666; font-size:10px; }}
-    tr.linha-saldo td {{ font-weight:bold; background:#f2f6f4; border-top:1px solid #ddd; border-bottom:1px solid #ddd; }}
-    .resumo-tabela {{ width:100%; border-collapse:collapse; margin-top:4px; }}
-    .resumo-tabela td {{ padding:3px 0; font-size:11px; }}
-    .resumo-tabela td.valor {{ text-align:right; }}
-    .resumo-tabela tr.destaque td {{ font-weight:bold; }}
-    .rodape {{ margin-top: 24px; font-size:10px; color:#666; }}
-    .nota {{ font-size:9px; color:#999; font-style:italic; }}
-    </style></head><body>
+    linhas.append([inicio.strftime("%d/%m"), "", "SALDO ANTERIOR", _fmt_moeda(saldo_anterior)])
+    estilos_linha += [
+        ("FONTNAME", (0, row), (-1, row), "Helvetica-Bold"),
+        ("BACKGROUND", (0, row), (-1, row), FUNDO_SALDO),
+        ("TEXTCOLOR", (3, row), (3, row), VERMELHO if saldo_anterior < 0 else VERDE_ESCURO),
+    ]
 
-    <div class="cabecalho">
-      <div class="logo">&#10003; SICOOB</div>
-      <div class="titulos">SISTEMA DE COOPERATIVAS DE CRÉDITO DO BRASIL<br>PLATAFORMA DE SERVIÇOS FINANCEIROS DO SICOOB - SISBR</div>
-    </div>
+    tabela = Table(linhas, colWidths=[18 * mm, 28 * mm, 101 * mm, 27 * mm], repeatRows=1)
+    tabela.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, 0), "Helvetica-Bold"),
+                ("FONTNAME", (0, 1), (-1, -1), "Helvetica"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("BOTTOMPADDING", (0, 0), (-1, 0), 4),
+                ("LINEBELOW", (0, 0), (-1, 0), 0.5, colors.HexColor("#999999")),
+                ("ALIGN", (3, 0), (3, -1), "RIGHT"),
+                ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                ("TOPPADDING", (0, 1), (-1, -1), 3),
+                ("BOTTOMPADDING", (0, 1), (-1, -1), 3),
+                *estilos_linha,
+            ]
+        )
+    )
+    elementos.append(tabela)
 
-    <div class="titulo-extrato">
-      <span>&#128203; EXTRATO DE CONTA CORRENTE</span>
-      <span>{agora}</span>
-    </div>
+    elementos.append(Paragraph("RESUMO", secao))
+    resumo = Table(
+        [
+            ["Saldo em conta:", _fmt_moeda(saldo_atual)],
+            ["Cheque especial contratado:", _fmt_moeda(saldo_limite, False)],
+            ["Juros vencidos provisionados:", "não disponível via API"],
+            ["Tarifas vencidas provisionadas:", "não disponível via API"],
+            ["Saldo disponível:", _fmt_moeda(saldo_disponivel)],
+            ["Saldo bloqueado (cheques):", _fmt_moeda(saldo_bloqueado, False)],
+            ["Saldo bloqueado (judicial):", _fmt_moeda(saldo_bloqueio_judicial, False)],
+        ],
+        colWidths=[80 * mm, 50 * mm],
+    )
+    resumo.setStyle(
+        TableStyle(
+            [
+                ("FONTNAME", (0, 0), (-1, -1), "Helvetica"),
+                ("FONTNAME", (0, 4), (-1, 4), "Helvetica-Bold"),
+                ("FONTSIZE", (0, 0), (-1, -1), 9),
+                ("ALIGN", (1, 0), (1, -1), "RIGHT"),
+                ("TOPPADDING", (0, 0), (-1, -1), 2),
+                ("BOTTOMPADDING", (0, 0), (-1, -1), 2),
+            ]
+        )
+    )
+    elementos.append(resumo)
 
-    <div class="info">
-      <b>Cooperativa:</b><span>{cooperativa} / {cooperativa_nome}</span>
-      <b>Conta:</b><span>{conta} / {razao_social}</span>
-      <b>Periodo:</b><span>{inicio.strftime('%d/%m/%Y')} - {fim.strftime('%d/%m/%Y')}</span>
-    </div>
+    elementos.append(Paragraph("OUTRAS INFORMAÇÕES", secao))
+    elementos.append(
+        Paragraph(
+            "Condições de cheque especial (vencimento, taxa, CET) e encargos a vencer não são "
+            "fornecidos por este endpoint da API do Sicoob — não exibidos para não apresentar "
+            "valor não confirmado.",
+            nota,
+        )
+    )
 
-    <h2 class="secao">&#128197; HISTÓRICO DE MOVIMENTAÇÃO</h2>
-    <table>
-      <thead><tr><th class="col-data">Data</th><th class="col-doc">Documento</th><th class="col-hist">Histórico</th><th class="col-valor">Valor</th></tr></thead>
-      <tbody>{"".join(linhas_html)}</tbody>
-    </table>
+    elementos.append(Paragraph("INFORMAÇÕES", secao))
+    elementos.append(Paragraph("SAC: 0800 724 4420 / OUVIDORIA SICOOB: 08007250996", info))
 
-    <h2 class="secao">&#128197; RESUMO</h2>
-    <table class="resumo-tabela">
-      <tr><td>Saldo em conta:</td><td class="valor">{_fmt_moeda(saldo_atual)}</td></tr>
-      <tr><td>Cheque especial contratado:</td><td class="valor">{_fmt_moeda(saldo_limite, False)}</td></tr>
-      <tr><td>Juros vencidos provisionados:</td><td class="valor">não disponível via API</td></tr>
-      <tr><td>Tarifas vencidas provisionadas:</td><td class="valor">não disponível via API</td></tr>
-      <tr class="destaque"><td>Saldo disponível:</td><td class="valor">{_fmt_moeda(saldo_disponivel)}</td></tr>
-      <tr><td>Saldo bloqueado (cheques):</td><td class="valor">{_fmt_moeda(saldo_bloqueado, False)}</td></tr>
-      <tr><td>Saldo bloqueado (judicial):</td><td class="valor">{_fmt_moeda(saldo_bloqueio_judicial, False)}</td></tr>
-    </table>
+    elementos.append(Spacer(1, 14))
+    elementos.append(
+        Paragraph(
+            "Gerado automaticamente a partir da API oficial do Sicoob — DPA / Fechamento Bancário.",
+            rodape,
+        )
+    )
 
-    <h2 class="secao">OUTRAS INFORMAÇÕES</h2>
-    <p class="nota">Condições de cheque especial (vencimento, taxa, CET) e encargos a vencer não são
-    fornecidos por este endpoint da API do Sicoob — não exibidos para não apresentar valor não confirmado.</p>
-
-    <h2 class="secao">&#8505; INFORMAÇÕES</h2>
-    <p>SAC: 0800 724 4420 / OUVIDORIA SICOOB: 08007250996</p>
-
-    <div class="rodape">Gerado automaticamente a partir da API oficial do Sicoob — DPA / Fechamento Bancário</div>
-    </body></html>"""
-
-    import os as _os
-
-    from playwright.sync_api import sync_playwright
-
-    # CHROMIUM_PATH aponta para o Chromium pré-instalado neste ambiente
-    # Claude Code. Fora dele, roda com o Chromium padrão do Playwright
-    # (é preciso ter rodado `playwright install chromium` antes).
-    executable_path = CHROMIUM_PATH if _os.path.exists(CHROMIUM_PATH) else None
-
-    with sync_playwright() as p:
-        browser = p.chromium.launch(executable_path=executable_path)
-        page = browser.new_page()
-        page.set_content(html)
-        pdf_bytes = page.pdf(format="A4", margin={"top": "12mm", "bottom": "12mm", "left": "10mm", "right": "10mm"})
-        browser.close()
-    return pdf_bytes
+    doc.build(elementos)
+    return buf.getvalue()
