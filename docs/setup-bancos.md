@@ -49,12 +49,19 @@ Variáveis de ambiente esperadas (ver `config/empresas.yaml`):
 - Lista de lançamentos (JSON): `GET /banking/v2/extrato?dataInicio=...&dataFim=...`.
 - PDF nativo: `GET /banking/v2/extrato/exportar` (mesmos parâmetros) —
   devolve `{"pdf": "<base64>"}`. Parâmetros de formato (`tipoArquivo`,
-  `formato`) são ignorados: esse endpoint **só** devolve PDF.
+  `formato`) são ignorados: esse endpoint **só** devolve PDF. **Não é
+  usado por este conector** — vem com fontes embutidas grandes demais
+  para o limite de upload por chamada do Google Drive usado aqui.
 - **Não há exportação nativa de OFX nem Excel** nessa API — o conector
-  (`connectors/inter.py`) gera os dois localmente a partir do JSON.
-- Falta apenas você informar a **agência e o número da conta** do Inter
-  para completar o nome padronizado dos arquivos (`conta` em
-  `config/empresas.yaml` ainda está como "A CONFIRMAR").
+  (`connectors/inter.py`) gera OFX, Excel e também o **PDF salvo no
+  Drive** localmente a partir do mesmo JSON de transações
+  (`connectors/inter_pdf.py`, via reportlab — fontes padrão, sem
+  embutimento, arquivo bem menor). Esse PDF não é o extrato oficial do
+  banco; o rodapé do documento deixa isso explícito. O PDF nativo pode
+  ser obtido direto no app/site do Inter quando o documento oficial for
+  necessário.
+- Agência e conta já informadas (`0001` / `3620284-3`), preenchidas em
+  `config/empresas.yaml`.
 
 ## Sicoob
 

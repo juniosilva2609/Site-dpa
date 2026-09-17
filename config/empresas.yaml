@@ -26,9 +26,13 @@ empresas:
         integracao:
           tipo: api_oficial
           provider: banco_inter
-          # Validado de ponta a ponta em 16/09/2026: autenticação real +
-          # extrato real (JSON) + PDF nativo da API + OFX/Excel gerados
-          # localmente (a API do Inter não exporta OFX/Excel).
+          # Validado de ponta a ponta em 16-17/09/2026: autenticação real +
+          # extrato real (JSON) + OFX/Excel gerados localmente (a API do
+          # Inter não exporta OFX/Excel) + upload no Drive. O PDF nativo da
+          # API vem com fontes embutidas grandes demais para o limite de
+          # upload desta integração; o PDF salvo é gerado localmente
+          # (connectors/inter_pdf.py, reportlab) a partir do mesmo JSON de
+          # transações e traz aviso de que não é o extrato oficial do banco.
           status: ativo
           escopo_necessario: "extrato.read (somente leitura)"
           credenciais_env:

@@ -18,15 +18,25 @@ Contrato confirmado por teste real em produção (16/09/2026):
   - Não existe exportação nativa de OFX nem Excel nessa API — por isso
     este conector gera os dois localmente a partir do JSON de transações
     (mesmo padrão usado no conector do Sicoob).
+
+Sobre o PDF: o endpoint nativo devolve um PDF com fontes customizadas
+embutidas, grande demais para o limite de upload por chamada da
+integração com o Google Drive usada por este projeto. Por isso o PDF
+salvo no Drive é gerado localmente (`inter_pdf.gerar_pdf`, via
+reportlab, fontes padrão sem embutimento) a partir do mesmo JSON de
+transações — não é o extrato oficial do banco (isso é explicitado no
+próprio rodapé do PDF gerado). O PDF nativo do banco pode ser obtido
+diretamente pelo app/site do Inter quando o documento oficial for
+necessário.
 """
 
-import base64
 import hashlib
 import os
 from datetime import date, datetime
 
 import requests
 
+from . import inter_pdf
 from .base import BankConnector, Extrato
 
 BASE_URL = "https://cdpj.partners.bancointer.com.br"
@@ -35,7 +45,9 @@ BASE_URL = "https://cdpj.partners.bancointer.com.br"
 class InterConnector(BankConnector):
     nome = "Inter"
 
-    def __init__(self):
+    def __init__(self, agencia: str, razao_social: str):
+        self.agencia = agencia
+        self.razao_social = razao_social
         self.client_id = os.environ["DPA_INTER_CLIENT_ID"]
         self.client_secret = os.environ["DPA_INTER_CLIENT_SECRET"]
         self.cert = (
@@ -77,16 +89,14 @@ class InterConnector(BankConnector):
         resp.raise_for_status()
         transacoes = resp.json().get("transacoes", [])
 
-        resp_pdf = requests.get(
-            f"{BASE_URL}/banking/v2/extrato/exportar",
-            headers=self._headers(),
-            params=params,
-            cert=self.cert,
-            timeout=30,
+        pdf = inter_pdf.gerar_pdf(
+            transacoes,
+            conta=conta,
+            agencia=self.agencia,
+            razao_social=self.razao_social,
+            inicio=inicio,
+            fim=fim,
         )
-        resp_pdf.raise_for_status()
-        pdf = base64.b64decode(resp_pdf.json()["pdf"])
-
         ofx = _gerar_ofx(transacoes, conta, inicio, fim).encode("utf-8")
         xlsx = _gerar_xlsx(transacoes)
 
