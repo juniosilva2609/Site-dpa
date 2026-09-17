@@ -78,5 +78,65 @@ empresas:
             certificado_pem: DPA_SICOOB_CERT_PEM   # convertido a partir do .pfx, ver docs/setup-bancos.md
             chave_privada: DPA_SICOOB_CERT_KEY
 
+  - id: c3s
+    razao_social: "C3S Assessoria Contábil Ltda"
+    status: ativo
+
+    # Estrutura de pastas própria da C3S (já usada antes da automação):
+    # Extratos/{ano}/{mês}/{Banco}/ — ano e mês são localizados ou criados
+    # dinamicamente a partir da raiz abaixo.
+    drive:
+      extratos_id: "1XjM8oydVEI5sgIuk07je4wZsicF5XftS"   # Extratos (raiz)
+
+    bancos:
+      - id: inter
+        nome_exibicao: "Inter"
+        codigo_padrao_nome: "INTER"
+        conta: "23578844-9"
+        agencia: "0001"
+        integracao:
+          tipo: api_oficial
+          provider: banco_inter
+          # Validado de ponta a ponta em 17/09/2026: mesmo conector da DPA
+          # (connectors/inter.py + inter_pdf.py), só troca client_id/cert/conta.
+          status: ativo
+          escopo_necessario: "extrato.read (somente leitura)"
+          credenciais_env:
+            client_id: DPA_C3S_INTER_CLIENT_ID
+            client_secret: DPA_C3S_INTER_CLIENT_SECRET
+            certificado: DPA_C3S_INTER_CERT_CRT
+            chave_privada: DPA_C3S_INTER_CERT_KEY
+
+  - id: licitprint
+    razao_social: "Licitprint Comunicação Visual Ltda"
+    status: ativo
+
+    # Estrutura de pastas própria da Licitprint (já usada antes da
+    # automação): FINANCEIRO/{mês}/{Banco}/ — sem pasta de ano.
+    drive:
+      extratos_id: "1gVJM-NNz9ui1O1FhPMAyOr7zEdbuTXKJ"   # FINANCEIRO (raiz)
+
+    bancos:
+      - id: inter
+        nome_exibicao: "Inter"
+        codigo_padrao_nome: "INTER"
+        conta: "52437086-9"
+        agencia: "0001"
+        integracao:
+          tipo: api_oficial
+          provider: banco_inter
+          # Primeira integração retornou 401 persistente (login/senha
+          # inválido) mesmo com cert/token corretos — problema do lado do
+          # Inter, confirmado pelo suporte deles. Corrigido em 17/09/2026
+          # com novo client_id/certificado emitido pelo Inter; validado de
+          # ponta a ponta (mesmo conector da DPA/C3S).
+          status: ativo
+          escopo_necessario: "extrato.read (somente leitura)"
+          credenciais_env:
+            client_id: DPA_LICITPRINT_INTER_CLIENT_ID
+            client_secret: DPA_LICITPRINT_INTER_CLIENT_SECRET
+            certificado: DPA_LICITPRINT_INTER_CERT_CRT
+            chave_privada: DPA_LICITPRINT_INTER_CERT_KEY
+
 # Fora de escopo (não são conta corrente para conciliação de extrato):
 # - Pronampe (linha de crédito, comprovantes tratados à parte)

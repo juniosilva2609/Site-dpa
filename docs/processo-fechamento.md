@@ -23,10 +23,16 @@ domínios — ver `docs/setup-bancos.md`.
 3. **Consultar o extrato** do período para a conta cadastrada.
 4. **Baixar em PDF, OFX e Excel** (quando o banco oferecer o formato).
 5. **Montar o nome padronizado** conforme `docs/padrao-nomenclatura.md`.
-6. **Localizar/criar a pasta de destino** no Drive:
-   `01.2 Bancário/Extratos/{ano}/{mês}/{Banco}/` (a partir dos IDs fixos em
-   `config/empresas.yaml`; mês e banco são localizados por nome ou criados
-   se ainda não existirem).
+6. **Localizar/criar a pasta de destino** no Drive, a partir da raiz fixa em
+   `empresas.<id>.drive.extratos_id` (`config/empresas.yaml`). Cada empresa
+   tem sua própria estrutura, já usada antes desta automação — respeitar a
+   que já existe, sem inventar uma nova:
+   - **DPA**: `Extratos/{ano}/{mês}/{Banco}/`
+   - **C3S**: `Extratos/{ano}/{mês}/{Banco}/`
+   - **Licitprint**: `FINANCEIRO/{mês}/{Banco}/` (sem pasta de ano)
+
+   Ano (quando houver), mês e banco são localizados por nome ou criados se
+   ainda não existirem.
 7. **Checar duplicidade** antes de gravar (ver regra de não sobrescrita).
 8. **Registrar no log** desta execução: arquivo baixado / indisponível
    naquele banco / erro (com a causa, nunca com dado sensível).
