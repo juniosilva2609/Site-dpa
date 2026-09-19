@@ -1,0 +1,632 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Barbearia Marcelo Soares</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&family=Work+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<meta name="description" content="Barbearia Marcelo Soares — corte, barba e cuidado masculino no Jardim América, Belo Horizonte, desde 2021. Agende online e fale no WhatsApp.">
+<meta property="og:title" content="Barbearia Marcelo Soares">
+<meta property="og:description" content="Corte, barba e atitude desde 2021. Jardim América, Belo Horizonte. Agende seu horário online.">
+<meta property="og:type" content="business.business">
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "HairSalon",
+  "name": "Barbearia Marcelo Soares",
+  "image": "assets/logo.png",
+  "priceRange": "$$",
+  "telephone": "+5531900000000",
+  "address": {
+    "@type": "PostalAddress",
+    "streetAddress": "R. Lindolfo de Azevedo, 1021",
+    "addressLocality": "Belo Horizonte",
+    "addressRegion": "MG",
+    "postalCode": "30421-382",
+    "addressCountry": "BR"
+  },
+  "sameAs": [
+    "https://www.instagram.com/barbeariamarcelosoares",
+    "https://www.instagram.com/marcelobarbeirobh"
+  ],
+  "url": ""
+}
+</script>
+
+<style>
+  :root{
+    --ink:#121110;
+    --panel:#1a1815;
+    --panel-2:#221e19;
+    --line:#332e26;
+    --gold:#c8a032;
+    --gold-bright:#e9c766;
+    --cream:#f3ead6;
+    --cream-dim:#cdc2a8;
+    --muted:#a89d86;
+    --red:#a8392c;
+    --blue:#2f5a96;
+    --whatsapp:#3fae5a;
+    --radius:14px;
+    --wrap:1180px;
+  }
+
+  *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  @media (prefers-reduced-motion:reduce){ html{scroll-behavior:auto;} }
+  body{
+    margin:0;
+    background:var(--ink);
+    color:var(--cream);
+    font-family:'Work Sans',ui-sans-serif,system-ui,sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Anton',ui-sans-serif,sans-serif; font-weight:400; letter-spacing:.01em; text-wrap:balance; margin:0;}
+  a{color:inherit;}
+  img{max-width:100%; display:block;}
+  .container{max-width:var(--wrap); margin-inline:auto; padding-inline:20px;}
+  section{padding-block:88px;}
+  @media (max-width:720px){ section{padding-block:60px;} }
+
+  .eyebrow{
+    font-family:'Oswald',ui-sans-serif,sans-serif;
+    text-transform:uppercase;
+    letter-spacing:.22em;
+    font-size:12.5px;
+    color:var(--gold-bright);
+    font-weight:600;
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:14px;
+  }
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--gold);display:inline-block;}
+
+  .stripe{
+    height:6px;
+    width:100%;
+    background:repeating-linear-gradient(-45deg,
+      var(--red) 0 14px, var(--cream) 14px 28px, var(--blue) 28px 42px, var(--cream) 42px 56px);
+    opacity:.9;
+  }
+  .stripe.thin{height:4px;}
+
+  /* ---------- Header ---------- */
+  header{
+    position:sticky; top:env(safe-area-inset-top,0px); z-index:50;
+    background:rgba(18,17,16,.92);
+    backdrop-filter:blur(10px);
+    border-bottom:1px solid var(--line);
+  }
+  .nav{
+    display:flex; align-items:center; justify-content:space-between;
+    padding-block:12px;
+    gap:16px;
+  }
+  .brand{display:flex; align-items:center; gap:12px; text-decoration:none;}
+  .brand img{width:44px; height:44px; border-radius:50%; object-fit:cover; box-shadow:0 0 0 2px var(--gold);}
+  .brand-name{font-family:'Oswald',sans-serif; font-weight:600; font-size:15px; letter-spacing:.03em; line-height:1.15;}
+  .brand-name small{display:block; font-size:10.5px; color:var(--muted); letter-spacing:.14em; font-weight:500;}
+
+  nav.links{display:flex; gap:28px; font-family:'Oswald',sans-serif; font-size:13.5px; letter-spacing:.06em; text-transform:uppercase; font-weight:500;}
+  nav.links a{text-decoration:none; color:var(--cream-dim); transition:color .15s;}
+  nav.links a:hover{color:var(--gold-bright);}
+
+  .nav-actions{display:flex; align-items:center; gap:10px;}
+
+  .btn{
+    display:inline-flex; align-items:center; justify-content:center; gap:8px;
+    font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.08em;
+    font-size:13px; font-weight:600;
+    padding:13px 24px; border-radius:999px; text-decoration:none;
+    border:1.5px solid transparent; cursor:pointer; transition:transform .15s, box-shadow .15s, background .15s;
+    white-space:nowrap;
+  }
+  .btn:hover{transform:translateY(-1px);}
+  .btn.gold{background:linear-gradient(180deg,var(--gold-bright),var(--gold)); color:#1a1408; box-shadow:0 6px 20px -6px rgba(200,160,50,.55);}
+  .btn.ghost{border-color:var(--gold); color:var(--gold-bright); background:transparent;}
+  .btn.wa{background:var(--whatsapp); color:#08210f;}
+  .btn.small{padding:9px 16px; font-size:12px;}
+
+  .icon-btn{width:38px; height:38px; border-radius:50%; display:flex; align-items:center; justify-content:center; border:1.5px solid var(--line); color:var(--cream); text-decoration:none; flex-shrink:0;}
+  .icon-btn:hover{border-color:var(--gold);}
+
+  .burger{display:none; background:none; border:1.5px solid var(--line); border-radius:10px; width:42px; height:38px; color:var(--cream); align-items:center; justify-content:center;}
+
+  @media (max-width:900px){
+    nav.links{display:none;}
+    .burger{display:flex;}
+  }
+  #mnav{
+    display:none; flex-direction:column; gap:2px; padding:10px 20px 18px;
+    border-top:1px solid var(--line); font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.06em; font-size:14px;
+  }
+  #mnav.open{display:flex;}
+  #mnav a{padding:12px 4px; text-decoration:none; color:var(--cream-dim); border-bottom:1px solid var(--line);}
+
+  /* ---------- Hero ---------- */
+  .hero{
+    position:relative;
+    padding-top:64px; padding-bottom:56px;
+    background:
+      radial-gradient(ellipse 900px 500px at 80% -10%, rgba(200,160,50,.16), transparent 60%),
+      radial-gradient(ellipse 700px 500px at 5% 10%, rgba(47,90,150,.12), transparent 60%),
+      var(--ink);
+    overflow:hidden;
+  }
+  .hero-grid{
+    display:grid; grid-template-columns:1.15fr .85fr; gap:56px; align-items:center;
+  }
+  @media (max-width:900px){ .hero-grid{grid-template-columns:1fr; gap:40px; text-align:center;} }
+
+  .hero h1{font-size:clamp(2.5rem,5.4vw,4.2rem); line-height:1.02;}
+  .hero h1 .accent{color:var(--gold-bright);}
+  .hero p.lede{font-size:18px; color:var(--cream-dim); max-width:46ch; margin-top:20px;}
+  @media (max-width:900px){ .hero p.lede{margin-inline:auto;} }
+
+  .hero-ctas{display:flex; gap:14px; flex-wrap:wrap; margin-top:32px;}
+  @media (max-width:900px){ .hero-ctas{justify-content:center;} }
+
+  .trust-row{display:flex; gap:12px; flex-wrap:wrap; margin-top:34px;}
+  @media (max-width:900px){ .trust-row{justify-content:center;} }
+  .trust-chip{
+    display:flex; align-items:center; gap:8px; font-family:'Oswald',sans-serif; font-size:12.5px;
+    letter-spacing:.05em; text-transform:uppercase; color:var(--cream-dim);
+    border:1px solid var(--line); padding:8px 14px; border-radius:999px; background:var(--panel);
+  }
+  .trust-chip svg{width:15px; height:15px; color:var(--gold);}
+
+  .hero-badge-wrap{position:relative; display:flex; justify-content:center;}
+  .hero-badge{
+    width:min(400px,80vw); aspect-ratio:1; border-radius:50%; overflow:hidden;
+    box-shadow:0 30px 70px -20px rgba(0,0,0,.7), 0 0 0 10px var(--panel), 0 0 0 11px var(--line);
+    animation:float 6s ease-in-out infinite;
+  }
+  .hero-badge img{width:100%; height:100%; object-fit:cover;}
+  @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+  @media (prefers-reduced-motion:reduce){ .hero-badge{animation:none;} }
+
+  .ring-orbit{position:absolute; inset:-26px; border-radius:50%; border:1px dashed rgba(200,160,50,.35); pointer-events:none;}
+
+  /* ---------- Sobre ---------- */
+  .sobre-grid{display:grid; grid-template-columns:.9fr 1.1fr; gap:64px; align-items:center;}
+  @media (max-width:860px){ .sobre-grid{grid-template-columns:1fr; gap:36px;} }
+  .sobre-frame{
+    border:1px solid var(--line); border-radius:var(--radius); padding:14px; background:var(--panel);
+  }
+  .sobre-frame img{border-radius:8px;}
+  .feature-list{display:flex; flex-direction:column; gap:16px; margin-top:28px;}
+  .feature{display:flex; gap:14px; align-items:flex-start;}
+  .feature .dot{width:34px; height:34px; border-radius:50%; background:var(--panel-2); border:1px solid var(--line); display:flex; align-items:center; justify-content:center; flex-shrink:0; color:var(--gold-bright);}
+  .feature b{font-family:'Oswald',sans-serif; font-weight:600; letter-spacing:.02em; font-size:15px;}
+  .feature p{margin:2px 0 0; color:var(--cream-dim); font-size:14.5px;}
+
+  h2.section-title{font-size:clamp(1.9rem,3.4vw,2.7rem); max-width:16ch;}
+  p.section-lede{color:var(--cream-dim); font-size:16.5px; max-width:60ch; margin-top:14px;}
+
+  /* ---------- Serviços ---------- */
+  .services-head{display:flex; justify-content:space-between; align-items:flex-end; gap:24px; flex-wrap:wrap;}
+  .svc-grid{display:grid; grid-template-columns:repeat(3,1fr); gap:20px; margin-top:44px;}
+  @media (max-width:860px){ .svc-grid{grid-template-columns:repeat(2,1fr);} }
+  @media (max-width:560px){ .svc-grid{grid-template-columns:1fr;} }
+  .svc-card{
+    background:var(--panel); border:1px solid var(--line); border-radius:var(--radius);
+    padding:26px 22px; transition:border-color .15s, transform .15s;
+  }
+  .svc-card:hover{border-color:var(--gold); transform:translateY(-3px);}
+  .svc-card .ico{width:44px; height:44px; border-radius:10px; background:var(--panel-2); display:flex; align-items:center; justify-content:center; color:var(--gold-bright); margin-bottom:18px;}
+  .svc-card h3{font-family:'Oswald',sans-serif; font-weight:600; font-size:17.5px; letter-spacing:.01em;}
+  .svc-card p{color:var(--cream-dim); font-size:14px; margin-top:8px;}
+
+  .svc-cta{display:flex; justify-content:center; margin-top:44px;}
+
+  /* ---------- Avaliações ---------- */
+  .reviews-panel{
+    background:var(--panel); border:1px solid var(--line); border-radius:20px;
+    padding:48px; display:grid; grid-template-columns:auto 1fr auto; gap:36px; align-items:center;
+  }
+  @media (max-width:860px){ .reviews-panel{grid-template-columns:1fr; text-align:center; padding:36px 24px;} }
+  .g-badge{width:74px; height:74px; border-radius:50%; background:#fff; display:flex; align-items:center; justify-content:center; flex-shrink:0;}
+  @media (max-width:860px){ .g-badge{margin-inline:auto;} }
+  .stars{display:flex; gap:4px; color:var(--gold-bright); margin-bottom:10px;}
+  @media (max-width:860px){ .stars{justify-content:center;} }
+  .reviews-panel h3{font-family:'Oswald',sans-serif; font-weight:600; font-size:21px;}
+  .reviews-panel p{color:var(--cream-dim); font-size:14.5px; margin-top:8px; max-width:48ch;}
+  .reviews-actions{display:flex; flex-direction:column; gap:10px;}
+  @media (max-width:860px){ .reviews-actions{flex-direction:row; justify-content:center; flex-wrap:wrap;} }
+
+  /* ---------- Localização ---------- */
+  .loc-grid{display:grid; grid-template-columns:1fr 1fr; gap:40px; align-items:stretch; margin-top:44px;}
+  @media (max-width:860px){ .loc-grid{grid-template-columns:1fr;} }
+  .map-frame{
+    border-radius:var(--radius); overflow:hidden; border:1px solid var(--line); min-height:340px;
+    position:relative; display:flex; align-items:center; justify-content:center; text-align:center;
+    background:
+      linear-gradient(rgba(200,160,50,.06) 1px, transparent 1px) 0 0/38px 38px,
+      linear-gradient(90deg, rgba(200,160,50,.06) 1px, transparent 1px) 0 0/38px 38px,
+      var(--panel-2);
+  }
+  .map-frame::before{
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(circle at 30% 70%, rgba(200,160,50,.10), transparent 55%),
+      radial-gradient(circle at 75% 25%, rgba(47,90,150,.12), transparent 50%);
+  }
+  .map-pin{position:relative; z-index:1; display:flex; flex-direction:column; align-items:center; gap:14px; padding:24px;}
+  .map-pin .pin-ico{width:56px; height:56px; border-radius:50%; background:linear-gradient(180deg,var(--gold-bright),var(--gold)); display:flex; align-items:center; justify-content:center; color:#1a1408; box-shadow:0 14px 30px -10px rgba(200,160,50,.6);}
+  .map-pin b{font-family:'Oswald',sans-serif; font-weight:600; font-size:16px; letter-spacing:.02em;}
+  .map-pin span{color:var(--cream-dim); font-size:13.5px; max-width:30ch;}
+  .loc-card{background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:32px; display:flex; flex-direction:column; gap:22px;}
+  .loc-row{display:flex; gap:14px; align-items:flex-start;}
+  .loc-row .ico{width:38px; height:38px; border-radius:10px; background:var(--panel-2); display:flex; align-items:center; justify-content:center; color:var(--gold-bright); flex-shrink:0;}
+  .loc-row b{font-family:'Oswald',sans-serif; font-size:13px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); display:block; margin-bottom:4px; font-weight:600;}
+  .loc-row span{font-size:15px;}
+  .loc-card .btn{margin-top:6px; align-self:flex-start;}
+
+  /* ---------- Social / Contato ---------- */
+  .social-grid{display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-top:44px;}
+  @media (max-width:760px){ .social-grid{grid-template-columns:1fr;} }
+  .social-card{
+    background:linear-gradient(160deg,var(--panel),var(--panel-2));
+    border:1px solid var(--line); border-radius:var(--radius); padding:30px;
+    display:flex; align-items:center; gap:18px;
+  }
+  .social-card .avatar{width:58px; height:58px; border-radius:50%; flex-shrink:0; overflow:hidden; border:2px solid var(--gold);}
+  .social-card .avatar img{width:100%;height:100%;object-fit:cover;}
+  .social-card .ig-ico{width:58px; height:58px; border-radius:50%; flex-shrink:0; background:radial-gradient(circle at 30% 30%,#feda75,#fa7e1e 30%,#d62976 55%,#962fbf 75%,#4f5bd5); display:flex; align-items:center; justify-content:center; color:#fff;}
+  .social-card b{font-family:'Oswald',sans-serif; font-size:16px; font-weight:600; display:block;}
+  .social-card span{color:var(--cream-dim); font-size:13.5px;}
+  .social-card .go{margin-left:auto; color:var(--gold-bright); flex-shrink:0;}
+
+  .contact-strip{
+    margin-top:24px; display:flex; align-items:center; justify-content:space-between; gap:24px; flex-wrap:wrap;
+    background:var(--panel-2); border:1px solid var(--line); border-radius:var(--radius); padding:28px 32px;
+  }
+  .contact-strip h3{font-family:'Oswald',sans-serif; font-weight:600; font-size:19px;}
+  .contact-strip p{color:var(--cream-dim); font-size:14px; margin-top:4px;}
+
+  /* ---------- Footer ---------- */
+  footer{background:#0b0a09; border-top:1px solid var(--line); padding-top:56px;}
+  .foot-grid{display:grid; grid-template-columns:1.3fr 1fr 1fr; gap:40px; padding-bottom:40px;}
+  @media (max-width:760px){ .foot-grid{grid-template-columns:1fr; gap:32px; text-align:center;} }
+  .foot-brand{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  @media (max-width:760px){ .foot-brand{justify-content:center;} }
+  .foot-brand img{width:46px; height:46px; border-radius:50%; box-shadow:0 0 0 2px var(--gold);}
+  .foot-brand b{font-family:'Oswald',sans-serif; font-size:15.5px; letter-spacing:.02em;}
+  footer p{color:var(--muted); font-size:13.5px; max-width:34ch;}
+  @media (max-width:760px){ footer p{margin-inline:auto;} }
+  .foot-col h4{font-family:'Oswald',sans-serif; text-transform:uppercase; letter-spacing:.1em; font-size:12.5px; color:var(--gold-bright); font-weight:600; margin-bottom:16px;}
+  .foot-col a, .foot-col span{display:block; color:var(--cream-dim); text-decoration:none; font-size:14px; margin-bottom:11px;}
+  .foot-col a:hover{color:var(--gold-bright);}
+  .foot-social{display:flex; gap:10px; margin-top:16px;}
+  @media (max-width:760px){ .foot-social{justify-content:center;} }
+  .foot-bottom{border-top:1px solid var(--line); padding:22px 0; display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--muted);}
+  @media (max-width:760px){ .foot-bottom{justify-content:center; text-align:center;} }
+
+  /* ---------- Floating WhatsApp ---------- */
+  .fab{
+    position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom,0px)); z-index:60;
+    width:60px; height:60px; border-radius:50%; background:var(--whatsapp); color:#08210f;
+    display:flex; align-items:center; justify-content:center; text-decoration:none;
+    box-shadow:0 10px 28px -6px rgba(63,174,90,.6);
+  }
+  .fab::before{
+    content:""; position:absolute; inset:0; border-radius:50%; background:var(--whatsapp);
+    animation:pulse 2.4s ease-out infinite; z-index:-1;
+  }
+  @keyframes pulse{0%{transform:scale(1); opacity:.55;}100%{transform:scale(1.8); opacity:0;}}
+  @media (prefers-reduced-motion:reduce){ .fab::before{animation:none;} }
+</style>
+
+</head>
+<body>
+<header>
+  <div class="container nav">
+    <a class="brand" href="#top">
+      <img src="assets/logo.png" alt="Logo Barbearia Marcelo Soares">
+      <span class="brand-name">Marcelo Soares<small>Barbearia · Desde 2021</small></span>
+    </a>
+    <nav class="links">
+      <a href="#sobre">Sobre</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#avaliacoes">Avaliações</a>
+      <a href="#localizacao">Localização</a>
+      <a href="#contato">Contato</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="icon-btn" href="https://wa.me/5531900000000?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener" aria-label="WhatsApp" title="WhatsApp — atualize o número no código antes de publicar">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.44.79 3.06 1.2 4.79 1.2 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.78 14.1c-.24.68-1.4 1.32-1.93 1.4-.49.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.85-1.23-4.71-4.1-4.85-4.29-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.08.99-2.37.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.41.49-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.61-.07.16-.19.68-.8.87-1.07.18-.28.36-.23.61-.14.24.09 1.54.73 1.81.86.26.14.44.2.5.32.06.12.06.68-.18 1.36z"/></svg>
+      </a>
+      <a class="btn gold small" href="https://sites.appbarber.com.br/barbeariamarcel-wgns" target="_blank" rel="noopener">Agendar</a>
+      <button class="burger" id="burgerBtn" aria-label="Abrir menu" aria-expanded="false" aria-controls="mnav">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+      </button>
+    </div>
+  </div>
+  <div id="mnav">
+    <a href="#sobre">Sobre</a>
+    <a href="#servicos">Serviços</a>
+    <a href="#avaliacoes">Avaliações</a>
+    <a href="#localizacao">Localização</a>
+    <a href="#contato">Contato</a>
+  </div>
+  <div class="stripe thin"></div>
+</header>
+
+<main id="top">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="eyebrow">Barbearia · Jardim América · Belo Horizonte</div>
+        <h1>Corte, barba<br>e atitude <span class="accent">desde 2021.</span></h1>
+        <p class="lede">Na Marcelo Soares, cada horário é dedicado a você: técnica de barbeiro clássico, ambiente autêntico e acabamento que se nota na rua. Agende em segundos, sem complicação.</p>
+        <div class="hero-ctas">
+          <a class="btn gold" href="https://sites.appbarber.com.br/barbeariamarcel-wgns" target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+            Agendar horário
+          </a>
+          <a class="btn wa" href="https://wa.me/5531900000000?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.44.79 3.06 1.2 4.79 1.2 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.78 14.1c-.24.68-1.4 1.32-1.93 1.4-.49.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.85-1.23-4.71-4.1-4.85-4.29-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.08.99-2.37.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.41.49-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.61-.07.16-.19.68-.8.87-1.07.18-.28.36-.23.61-.14.24.09 1.54.73 1.81.86.26.14.44.2.5.32.06.12.06.68-.18 1.36z"/></svg>
+            Chamar no WhatsApp
+          </a>
+        </div>
+        <div class="trust-row">
+          <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2l2.4 6.6H21l-5.4 4 2 6.8-5.6-4.2L6.4 19.4l2-6.8L3 8.6h6.6z"/></svg>Avaliado no Google</span>
+          <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0112 5a5.5 5.5 0 019.5 7c-2.5 4.4-9.5 9-9.5 9z"/></svg>Desde 2021</span>
+          <span class="trust-chip"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-11V5l-8-3-8 3v6c0 6.5 8 11 8 11z"/></svg>Jardim América · BH</span>
+        </div>
+      </div>
+      <div class="hero-badge-wrap">
+        <div class="ring-orbit"></div>
+        <div class="hero-badge"><img src="assets/logo.png" alt="Logo circular da Barbearia Marcelo Soares: bigode, tesoura e faixa de barbearia"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="stripe"></div>
+
+  <!-- SOBRE -->
+  <section id="sobre">
+    <div class="container sobre-grid">
+      <div class="sobre-frame">
+        <img src="assets/logo.png" alt="Identidade visual da Barbearia Marcelo Soares">
+      </div>
+      <div>
+        <div class="eyebrow">Nossa história</div>
+        <h2 class="section-title">Barbearia de bairro, ofício de barbeiro</h2>
+        <p class="section-lede">Desde 2021 a Barbearia Marcelo Soares atende o Jardim América com um compromisso simples: cuidar de cada cliente como se fosse o único da cadeira naquele dia. O resultado é uma clientela fiel, que volta pelo corte — e fica pela experiência.</p>
+        <div class="feature-list">
+          <div class="feature">
+            <div class="dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div><b>Atendimento individual</b><p>Sem pressa, sem fila dupla — um cliente, um barbeiro, um resultado impecável.</p></div>
+          </div>
+          <div class="feature">
+            <div class="dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div><b>Ambiente clássico de barbearia</b><p>Cultura de barbearia tradicional, com acabamento na régua e na navalha.</p></div>
+          </div>
+          <div class="feature">
+            <div class="dot"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
+            <div><b>Agendamento 100% online</b><p>Escolha o horário direto pelo app ou confirme em segundos pelo WhatsApp.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SERVIÇOS -->
+  <section id="servicos" style="background:var(--panel); border-block:1px solid var(--line);">
+    <div class="container">
+      <div class="services-head">
+        <div>
+          <div class="eyebrow">O que fazemos</div>
+          <h2 class="section-title">Serviços para cada estilo</h2>
+        </div>
+        <p class="section-lede" style="margin-top:0;">Da manutenção rápida ao ritual completo — valores e horários disponíveis na hora de agendar.</p>
+      </div>
+
+      <div class="svc-grid">
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M20 4L8.5 15.5M14.5 14.5L20 20M8.5 8.5L6 6"/></svg></div>
+          <h3>Corte Masculino</h3>
+          <p>Cortes clássicos e modernos, com acabamento preciso na régua e na navalha.</p>
+        </div>
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 10c0-3 3-6 8-6s8 3 8 6-2 8-8 11c-6-3-8-8-8-11z"/></svg></div>
+          <h3>Barba</h3>
+          <p>Modelagem completa, toalha quente e hidratação para uma barba no estilo.</p>
+        </div>
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v18M3 12h18"/></svg></div>
+          <h3>Combo Corte + Barba</h3>
+          <p>O ritual completo da barbearia, do início ao acabamento, num só horário.</p>
+        </div>
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M2 12c3-5 8-6 11-6M22 9c-2 4-6 6-9 6"/></svg></div>
+          <h3>Sobrancelha</h3>
+          <p>Design que valoriza o olhar, feito com precisão e discrição.</p>
+        </div>
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 4l16 16M20 4L4 20"/></svg></div>
+          <h3>Acabamento (Pézinho)</h3>
+          <p>Aquele retoque rápido para manter o contorno sempre em dia entre os cortes.</p>
+        </div>
+        <div class="svc-card">
+          <div class="ico"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 3a9 9 0 010 18"/></svg></div>
+          <h3>Coloração &amp; Platinado</h3>
+          <p>Para quem quer ousar com técnica, cuidado e produtos adequados.</p>
+        </div>
+      </div>
+
+      <div class="svc-cta">
+        <a class="btn gold" href="https://sites.appbarber.com.br/barbeariamarcel-wgns" target="_blank" rel="noopener">Ver agenda e valores</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- AVALIAÇÕES -->
+  <section id="avaliacoes">
+    <div class="container">
+      <div class="eyebrow" style="justify-content:center; display:flex;">Reputação</div>
+      <h2 class="section-title" style="text-align:center; margin-inline:auto; max-width:22ch;">Quem senta na cadeira, indica</h2>
+
+      <div class="reviews-panel" style="margin-top:44px;">
+        <div class="g-badge">
+          <svg width="34" height="34" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.5 0 6.6 1.2 9.1 3.6l6.8-6.8C35.6 2.4 30.2 0 24 0 14.6 0 6.5 5.4 2.6 13.2l7.9 6.1C12.3 13.2 17.7 9.5 24 9.5z"/><path fill="#4285F4" d="M46.5 24.5c0-1.6-.1-3.1-.4-4.5H24v9h12.7c-.5 3-2.2 5.5-4.7 7.2l7.3 5.7c4.3-4 6.8-9.8 6.8-17.4z"/><path fill="#FBBC05" d="M10.5 19.3a14.5 14.5 0 000 9.4l-7.9 6.1a24 24 0 010-21.6l7.9 6.1z"/><path fill="#34A853" d="M24 48c6.2 0 11.6-2.1 15.4-5.5l-7.3-5.7c-2 1.4-4.7 2.2-8.1 2.2-6.3 0-11.7-3.7-13.5-9.3l-7.9 6.1C6.5 42.6 14.6 48 24 48z"/></svg>
+        </div>
+        <div>
+          <div class="stars">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6L21.9 9l-5.3 4.6L18.1 21 12 17.3 5.9 21l1.5-7.4L2.1 9l7-.4z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6L21.9 9l-5.3 4.6L18.1 21 12 17.3 5.9 21l1.5-7.4L2.1 9l7-.4z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6L21.9 9l-5.3 4.6L18.1 21 12 17.3 5.9 21l1.5-7.4L2.1 9l7-.4z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6L21.9 9l-5.3 4.6L18.1 21 12 17.3 5.9 21l1.5-7.4L2.1 9l7-.4z"/></svg>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.9 6.6L21.9 9l-5.3 4.6L18.1 21 12 17.3 5.9 21l1.5-7.4L2.1 9l7-.4z"/></svg>
+          </div>
+          <h3>Veja nossa nota real e os comentários no Google</h3>
+          <p>Os depoimentos de quem já passou pela cadeira ficam direto no nosso perfil do Google — atualizados a cada novo cliente atendido. Já veio aqui? Sua avaliação ajuda outros clientes a nos encontrar.</p>
+        </div>
+        <div class="reviews-actions">
+          <a class="btn gold small" href="https://share.google/hAx23m9HWjk2uno0j" target="_blank" rel="noopener">Ver avaliações</a>
+          <a class="btn ghost small" href="https://share.google/hAx23m9HWjk2uno0j" target="_blank" rel="noopener">Deixar minha avaliação</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOCALIZAÇÃO -->
+  <section id="localizacao" style="background:var(--panel); border-block:1px solid var(--line);">
+    <div class="container">
+      <div class="eyebrow">Onde estamos</div>
+      <h2 class="section-title">Venha nos visitar</h2>
+
+      <div class="loc-grid">
+        <a class="map-frame" href="https://www.google.com/maps/dir/?api=1&destination=R.+Lindolfo+de+Azevedo,+1021+-+Jardim+America,+Belo+Horizonte+-+MG,+30421-382" target="_blank" rel="noopener" aria-label="Abrir localização no Google Maps">
+          <div class="map-pin">
+            <div class="pin-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4.5 8-11a8 8 0 10-16 0c0 6.5 8 11 8 11z"/><circle cx="12" cy="11" r="3"/></svg></div>
+            <b>Jardim América, Belo Horizonte</b>
+            <span>R. Lindolfo de Azevedo, 1021 — toque para abrir a rota no Google Maps</span>
+          </div>
+        </a>
+        <div class="loc-card">
+          <div class="loc-row">
+            <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 22s8-4.5 8-11a8 8 0 10-16 0c0 6.5 8 11 8 11z"/><circle cx="12" cy="11" r="3"/></svg></div>
+            <div><b>Endereço</b><span>R. Lindolfo de Azevedo, 1021 — Jardim América, Belo Horizonte - MG, 30421-382</span></div>
+          </div>
+          <div class="loc-row">
+            <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 4v3M16 4v3"/></svg></div>
+            <div><b>Agendamento</b><span>Online, pelo app de agendamentos — escolha o dia e horário que preferir.</span></div>
+          </div>
+          <div class="loc-row">
+            <div class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="18" height="13" rx="2"/><path d="M8 6V4h8v2"/></svg></div>
+            <div><b>CNPJ</b><span>11.641.134/0001-08</span></div>
+          </div>
+          <a class="btn ghost" href="https://www.google.com/maps/dir/?api=1&destination=R.+Lindolfo+de+Azevedo,+1021+-+Jardim+America,+Belo+Horizonte+-+MG,+30421-382" target="_blank" rel="noopener">Como chegar</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- REDES / CONTATO -->
+  <section id="contato">
+    <div class="container">
+      <div class="eyebrow">Redes sociais</div>
+      <h2 class="section-title">Siga e acompanhe o dia a dia</h2>
+
+      <div class="social-grid">
+        <a class="social-card" href="https://www.instagram.com/barbeariamarcelosoares" target="_blank" rel="noopener">
+          <div class="ig-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg></div>
+          <div><b>@barbeariamarcelosoares</b><span>Instagram oficial da barbearia</span></div>
+          <svg class="go" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M8 7h9v9"/></svg>
+        </a>
+        <a class="social-card" href="https://www.instagram.com/marcelobarbeirobh" target="_blank" rel="noopener">
+          <div class="ig-ico"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg></div>
+          <div><b>@marcelobarbeirobh</b><span>Instagram pessoal do Marcelo Soares</span></div>
+          <svg class="go" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M8 7h9v9"/></svg>
+        </a>
+      </div>
+
+      <div class="contact-strip">
+        <div>
+          <h3>Pronto para marcar seu horário?</h3>
+          <p>Chame no WhatsApp ou agende direto no app — o que for mais rápido para você.</p>
+        </div>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <a class="btn wa" href="https://wa.me/5531900000000?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener">WhatsApp</a>
+          <a class="btn gold" href="https://sites.appbarber.com.br/barbeariamarcel-wgns" target="_blank" rel="noopener">Agendar horário</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<div class="stripe"></div>
+
+<footer>
+  <div class="container foot-grid">
+    <div>
+      <div class="foot-brand">
+        <img src="assets/logo.png" alt="Logo Barbearia Marcelo Soares">
+        <b>Barbearia Marcelo Soares</b>
+      </div>
+      <p>Corte, barba e cuidado masculino no Jardim América, Belo Horizonte — desde 2021.</p>
+      <div class="foot-social">
+        <a class="icon-btn" href="https://www.instagram.com/barbeariamarcelosoares" target="_blank" rel="noopener" aria-label="Instagram da barbearia">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+        </a>
+        <a class="icon-btn" href="https://www.instagram.com/marcelobarbeirobh" target="_blank" rel="noopener" aria-label="Instagram do Marcelo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.2" cy="6.8" r="1"/></svg>
+        </a>
+        <a class="icon-btn" href="https://wa.me/5531900000000" target="_blank" rel="noopener" aria-label="WhatsApp">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.44.79 3.06 1.2 4.79 1.2 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2z"/></svg>
+        </a>
+      </div>
+    </div>
+    <div class="foot-col">
+      <h4>Navegação</h4>
+      <a href="#sobre">Sobre</a>
+      <a href="#servicos">Serviços</a>
+      <a href="#avaliacoes">Avaliações</a>
+      <a href="#localizacao">Localização</a>
+    </div>
+    <div class="foot-col">
+      <h4>Contato</h4>
+      <span>R. Lindolfo de Azevedo, 1021<br>Jardim América, Belo Horizonte - MG<br>30421-382</span>
+      <span>CNPJ 11.641.134/0001-08</span>
+    </div>
+  </div>
+  <div class="container foot-bottom">
+    <span>© 2026 Barbearia Marcelo Soares — Todos os direitos reservados.</span>
+    <span>Prévia de site para avaliação · domínio a definir</span>
+  </div>
+</footer>
+
+<a class="fab" href="https://wa.me/5531900000000?text=Ol%C3%A1!%20Vim%20pelo%20site%20e%20gostaria%20de%20agendar%20um%20hor%C3%A1rio." target="_blank" rel="noopener" aria-label="Chamar no WhatsApp">
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91c0 1.75.46 3.45 1.32 4.95L2 22l5.25-1.38c1.44.79 3.06 1.2 4.79 1.2 5.46 0 9.91-4.45 9.91-9.91C21.95 6.45 17.5 2 12.04 2zm5.78 14.1c-.24.68-1.4 1.32-1.93 1.4-.49.08-1.11.11-1.79-.11-.41-.13-.94-.3-1.62-.6-2.85-1.23-4.71-4.1-4.85-4.29-.14-.19-1.16-1.54-1.16-2.94 0-1.4.73-2.08.99-2.37.26-.28.57-.35.76-.35.19 0 .38 0 .55.01.18.01.41-.07.64.49.24.58.81 2 .88 2.14.07.14.11.31.02.5-.09.19-.14.31-.28.48-.14.16-.29.36-.41.49-.14.14-.28.29-.12.57.16.28.71 1.17 1.52 1.9 1.05.94 1.93 1.23 2.21 1.37.28.14.44.12.61-.07.16-.19.68-.8.87-1.07.18-.28.36-.23.61-.14.24.09 1.54.73 1.81.86.26.14.44.2.5.32.06.12.06.68-.18 1.36z"/></svg>
+</a>
+
+<script>
+  (function(){
+    var btn = document.getElementById('burgerBtn');
+    var menu = document.getElementById('mnav');
+    if(!btn||!menu) return;
+    btn.addEventListener('click', function(){
+      var open = menu.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open ? 'true' : 'false');
+    });
+    menu.querySelectorAll('a').forEach(function(a){
+      a.addEventListener('click', function(){
+        menu.classList.remove('open');
+        btn.setAttribute('aria-expanded','false');
+      });
+    });
+  })();
+</script>
+</body>
+</html>
