@@ -10,3 +10,8 @@
 __pycache__/
 *.pyc
 .venv/
+
+# Log de execução do orquestrador (connectors/runner.py) — só nomes de
+# banco/status/motivo, nunca segredo, mas não precisa ser versionado.
+logs/
+.pytest_cache/

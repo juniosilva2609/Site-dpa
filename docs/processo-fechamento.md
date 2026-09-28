@@ -6,6 +6,17 @@ de cada mês). Só cobre bancos com `integracao.status: ativo` em
 cadastro, pendente de certificado, bloqueado por rede etc.) entra no
 relatório como pendente, sem travar os outros bancos.
 
+**Desde a auditoria de 09/2026, os passos 1-4 e 7-8 abaixo são código
+determinístico e testado** (`connectors/runner.py`, `connectors/dedup.py`,
+`connectors/nomenclatura.py`, `connectors/retry.py`), não mais só uma
+descrição em prosa interpretada a cada execução — ver
+`connectors/runner.py:processar_periodo`. O que continua fora deste
+repositório é só a integração real com o Google Drive (passos 6 e a
+gravação dos arquivos), que hoje depende de uma sessão de agente autenticada
+no Drive; `processar_periodo` já devolve, por empresa/banco, quais arquivos
+são "novo"/"existente"/"nova_versao" para quem for gravar decidir o que
+fazer com cada um.
+
 **Pré-requisito de ambiente**: a política de rede deste ambiente de
 execução precisa permitir saída para os domínios de API de cada banco
 ativo (ex: `auth.sicoob.com.br`, `api.sicoob.com.br`,
@@ -33,10 +44,16 @@ domínios — ver `docs/setup-bancos.md`.
 
    Ano (quando houver), mês e banco são localizados por nome ou criados se
    ainda não existirem.
-7. **Checar duplicidade** antes de gravar (ver regra de não sobrescrita).
+7. **Checar duplicidade** antes de gravar (ver regra de não sobrescrita em
+   `docs/padrao-nomenclatura.md`, implementada em `connectors/dedup.py`).
 8. **Registrar no log** desta execução: arquivo baixado / indisponível
-   naquele banco / erro (com a causa, nunca com dado sensível).
-9. Repetir para os próximos bancos/empresas.
+   naquele banco / erro (com a causa, nunca com dado sensível) — grava em
+   `logs/fechamento.log` via `connectors/runner.py:configurar_logging`.
+9. Repetir para os próximos bancos/empresas — uma falha (erro de rede, API
+   fora do ar, credencial expirada) em um banco nunca impede os demais:
+   `connectors/runner.py:processar_banco` isola cada chamada e devolve
+   status `"erro"` só para aquele banco, com retry automático (backoff
+   exponencial, `connectors/retry.py`) para falha transitória de rede/5xx.
 
 ## Relatório final
 

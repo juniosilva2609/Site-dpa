@@ -20,6 +20,32 @@ ou qualquer movimentação financeira.
   `sicoob.py`); pronto para funcionar assim que as credenciais forem
   configuradas como variável de ambiente. Endpoints exatos devem ser
   reconferidos no portal do banco no momento da ativação.
+  - `runner.py` — orquestrador: percorre `config/empresas.yaml`, isola erro
+    por banco (um banco fora do ar nunca trava os outros), com retry
+    automático para falha transitória de rede/servidor.
+  - `config.py` — valida `empresas.yaml` na carga (falha cedo e com mensagem
+    clara se faltar um campo obrigatório).
+  - `dedup.py` — checagem de duplicidade por hash de conteúdo (não só nome
+    de arquivo), implementando a regra de `docs/padrao-nomenclatura.md`.
+  - `nomenclatura.py` — monta o nome padronizado do arquivo e a competência
+    (quinzena) a partir da data do período.
+  - `retry.py` — backoff exponencial para erro transitório de rede/5xx; erro
+    de cliente (4xx, ex: credencial inválida) nunca é reprocessado.
+
+  `runner.py` não fala com o Google Drive: devolve, por empresa/banco, os
+  arquivos a gravar (já resolvidos como novo/existente/nova versão) para
+  quem estiver integrando com o Drive.
+
+## Testes
+
+```
+pip install -r requirements-dev.txt
+pytest
+```
+
+Cobre os conectores (Inter/Sicoob, com API mockada), a validação de
+`empresas.yaml`, a regra de duplicidade e o isolamento de erro entre
+bancos/empresas no orquestrador.
 
 ## Status atual
 
