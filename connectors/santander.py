@@ -6,18 +6,23 @@ Credenciais só de variáveis de ambiente (nunca hardcoded, nunca logadas):
   DPA_SANTANDER_CERT_CRT (caminho do certificado do e-CNPJ da DPA),
   DPA_SANTANDER_CERT_KEY (caminho da chave privada extraída do .pfx do e-CNPJ)
 
-Diferente do Inter e do Sicoob, este conector AINDA NÃO foi validado por uma
-chamada real em produção — falta a chave privada (protegida dentro do .pfx
-do e-CNPJ, com senha, ainda não extraída). O host/endpoint de token abaixo é
-o publicamente documentado para integrações Santander Developers Brasil
-(client_credentials + mTLS); o endpoint de extrato do produto
-"Balance and Extract" não está confirmado, por isso `baixar_extrato` levanta
-`NotImplementedError` até o primeiro teste real definir o caminho e o
-formato de resposta certos (ver TODO abaixo). Enquanto isso,
-`config/empresas.yaml` mantém `integracao.status: pendente_cadastro` — este
-conector não é chamado pelo orquestrador (`connectors/runner.py`) até que
-esse status mude para `ativo`, depois de um teste de ponta a ponta
-bem-sucedido (mesmo critério usado para Inter e Sicoob).
+Status em 30/09/2026: **autenticação confirmada por chamada real** —
+`autenticar()` foi testado em produção com client_id/client_secret/
+certificado/chave reais da DPA e devolveu um token válido. O endpoint de
+extrato/saldo do produto "Balance and Extract" AINDA NÃO foi confirmado:
+três caminhos plausíveis (`/balances_extracts/v1/bank_accounts/{agencia.
+conta}/...`) foram testados e o gateway do Santander devolveu "Unable to
+identify proxy for host" — ou seja, esse proxy/produto não existe nesse
+caminho para esta aplicação. O caminho certo só aparece na documentação da
+aplicação "Plataforma ERP-DPA API SANTAND" depois de logar no Portal
+Santander Developers (developer.santander.com.br → Minhas Aplicações → essa
+aplicação → documentação/Swagger do produto Balance and Extract).
+`baixar_extrato` levanta `NotImplementedError` até esse caminho ser
+confirmado (ver TODO abaixo). Enquanto isso, `config/empresas.yaml` mantém
+`integracao.status: pendente_cadastro` — este conector não é chamado pelo
+orquestrador (`connectors/runner.py`) até que esse status mude para `ativo`,
+depois de um teste de ponta a ponta bem-sucedido (mesmo critério usado para
+Inter e Sicoob).
 """
 
 import os
@@ -70,14 +75,21 @@ class SantanderConnector(BankConnector):
         return {"Authorization": f"Bearer {self._token}"}
 
     def baixar_extrato(self, conta: str, inicio: date, fim: date) -> Extrato:
-        # TODO (bloqueado até o primeiro teste real): confirmar no Portal
-        # Santander Developers (aplicação "Plataforma ERP-DPA API SANTAND")
-        # o caminho exato do produto "Balance and Extract" e o formato da
-        # resposta (nome dos campos de transação), e então implementar aqui
-        # no mesmo padrão de connectors/inter.py e connectors/sicoob.py
-        # (GET com headers de auth + mTLS, gerar PDF/OFX/Excel localmente a
-        # partir do JSON de transações).
+        # TODO (bloqueado): confirmar no Portal Santander Developers
+        # (developer.santander.com.br → Minhas Aplicações → "Plataforma
+        # ERP-DPA API SANTAND" → documentação/Swagger do produto Balance and
+        # Extract) o caminho exato do endpoint e o formato da resposta (nome
+        # dos campos de transação). Caminhos já testados e descartados em
+        # 30/09/2026 (gateway devolveu "Unable to identify proxy for host"):
+        #   /balances_extracts/v1/bank_accounts/{agencia}.{conta}/balances
+        #   /balances_extracts/v1/bank_accounts/{agencia}.{conta}/extracts
+        #   /balances_extracts/v1/bank_accounts/{agencia}.{conta}
+        # Depois de confirmado, implementar aqui no mesmo padrão de
+        # connectors/inter.py e connectors/sicoob.py (GET com headers de
+        # auth + mTLS, gerar PDF/OFX/Excel localmente a partir do JSON de
+        # transações).
         raise NotImplementedError(
-            "endpoint de extrato do Santander ainda não confirmado por teste real "
-            "— ver TODO em connectors/santander.py"
+            "endpoint de extrato do Santander ainda não confirmado — "
+            "autenticação já validada, falta o caminho certo do Portal "
+            "(ver TODO em connectors/santander.py)"
         )
