@@ -111,6 +111,22 @@ Variáveis de ambiente esperadas:
 `DPA_SANTANDER_CLIENT_ID`, `DPA_SANTANDER_CLIENT_SECRET`,
 `DPA_SANTANDER_CERT_CRT`, `DPA_SANTANDER_CERT_KEY`.
 
+**Em andamento (30/09/2026)** — aplicação "Plataforma ERP-DPA API SANTAND"
+criada e aprovada, certificado do e-CNPJ da DPA aceito pelo banco. Client ID,
+Client Secret e o certificado já estão guardados em
+`~/.dpa-secrets/santander.env` e `connectors/santander.py` já implementa a
+autenticação (mesmo padrão do Inter/Sicoob: OAuth2 client_credentials +
+mTLS, host `trust-open.api.santander.com.br`). Falta:
+- **A chave privada** do certificado — está dentro do `.pfx` do e-CNPJ,
+  protegido por senha, ainda não extraída. Extrair com (no computador onde
+  está o `.pfx`; acrescentar `-legacy` se der erro de algoritmo):
+  ```
+  openssl pkcs12 -in certificado.pfx -nocerts -nodes -out chave.key
+  ```
+- **Confirmar o endpoint de extrato** do produto Balance and Extract com uma
+  chamada real (o caminho usado em `connectors/santander.py` é um TODO —
+  ainda não validado) — só então `integracao.status` vira `ativo`.
+
 ## Como as credenciais ficam guardadas neste ambiente
 
 Este ambiente não oferece um mecanismo de "variável de ambiente" permanente

@@ -5,6 +5,7 @@ import pytest
 import requests
 
 from connectors.inter import InterConnector
+from connectors.santander import SantanderConnector
 from connectors.sicoob import SicoobConnector
 
 
@@ -107,6 +108,36 @@ def test_sicoob_autentica_e_baixa_extrato(monkeypatch, tmp_path):
     assert extrato.pdf is not None
     assert extrato.ofx is not None
     assert extrato.xlsx is not None
+
+
+def test_santander_autentica(monkeypatch, tmp_path):
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_ID", "id")
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("DPA_SANTANDER_CERT_CRT", str(tmp_path / "c.crt"))
+    monkeypatch.setenv("DPA_SANTANDER_CERT_KEY", str(tmp_path / "c.key"))
+
+    token_resp = MagicMock(status_code=200)
+    token_resp.raise_for_status.return_value = None
+    token_resp.json.return_value = {"access_token": "tok789"}
+
+    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+
+    with patch("connectors.santander.requests.post", return_value=token_resp) as post:
+        conector.autenticar()
+
+    post.assert_called_once()
+    assert conector._token == "tok789"
+
+
+def test_santander_baixar_extrato_ainda_nao_implementado(monkeypatch, tmp_path):
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_ID", "id")
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("DPA_SANTANDER_CERT_CRT", str(tmp_path / "c.crt"))
+    monkeypatch.setenv("DPA_SANTANDER_CERT_KEY", str(tmp_path / "c.key"))
+    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+
+    with pytest.raises(NotImplementedError):
+        conector.baixar_extrato("13000821-0", date(2026, 9, 1), date(2026, 9, 15))
 
 
 def test_sicoob_erro_500_propaga(monkeypatch, tmp_path):

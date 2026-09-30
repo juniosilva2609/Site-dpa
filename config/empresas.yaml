@@ -44,12 +44,20 @@ empresas:
       - id: santander
         nome_exibicao: "Santander"
         codigo_padrao_nome: "SANTANDER"
-        conta: "A CONFIRMAR"
-        agencia: "A CONFIRMAR"
+        conta: "13000821-0"
+        agencia: "4177"
         integracao:
           tipo: api_oficial
           provider: santander_developers
-          status: pendente_cadastro             # ainda não iniciado
+          # Aplicação "Plataforma ERP-DPA API SANTAND" criada e aprovada em
+          # 30/09/2026 (produto Balance and Extract). Client ID/Secret e o
+          # certificado do e-CNPJ já guardados em ~/.dpa-secrets/santander.env
+          # (connectors/santander.py implementado, mesmo padrão do Inter/
+          # Sicoob). Falta só a chave privada (dentro do .pfx do e-CNPJ,
+          # protegida por senha) para o primeiro teste real — enquanto isso
+          # o status continua pendente_cadastro; connectors/runner.py só
+          # chama este conector quando o status virar ativo.
+          status: pendente_cadastro
           escopo_necessario: "extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_SANTANDER_CLIENT_ID

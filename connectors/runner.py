@@ -27,6 +27,7 @@ from .dedup import resolver_nome
 from .inter import InterConnector
 from .nomenclatura import montar_nome as montar_nome_padrao
 from .retry import com_retry
+from .santander import SantanderConnector
 from .sicoob import SicoobConnector
 
 logger = logging.getLogger("fechamento")
@@ -39,6 +40,9 @@ FABRICAS_CONECTOR: dict[str, Callable[[dict, dict], BankConnector]] = {
         cooperativa=banco["cooperativa"],
         cooperativa_nome=banco["cooperativa_nome"],
         razao_social=empresa["razao_social"],
+    ),
+    "santander_developers": lambda banco, empresa: SantanderConnector(
+        agencia=banco["agencia"], razao_social=empresa["razao_social"]
     ),
 }
 
