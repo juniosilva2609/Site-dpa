@@ -129,15 +129,94 @@ def test_santander_autentica(monkeypatch, tmp_path):
     assert conector._token == "tok789"
 
 
-def test_santander_baixar_extrato_ainda_nao_implementado(monkeypatch, tmp_path):
+def test_santander_baixa_extrato_efetivos_e_provisionados(monkeypatch, tmp_path):
     monkeypatch.setenv("DPA_SANTANDER_CLIENT_ID", "id")
     monkeypatch.setenv("DPA_SANTANDER_CLIENT_SECRET", "secret")
     monkeypatch.setenv("DPA_SANTANDER_CERT_CRT", str(tmp_path / "c.crt"))
     monkeypatch.setenv("DPA_SANTANDER_CERT_KEY", str(tmp_path / "c.key"))
+
+    token_resp = MagicMock(status_code=200)
+    token_resp.raise_for_status.return_value = None
+    token_resp.json.return_value = {"access_token": "tok789"}
+
+    efetivos_resp = MagicMock(status_code=200)
+    efetivos_resp.raise_for_status.return_value = None
+    efetivos_resp.json.return_value = {
+        "_content": [
+            {
+                "creditDebitType": "CREDITO",
+                "transactionName": "TED RECEBIDA",
+                "historicComplement": "18715615000160",
+                "amount": "636.27",
+                "transactionDate": "30/09/2026",
+                "documentNumber": "000000",
+            }
+        ],
+        "_pageable": {"totalRecords": "1"},
+    }
+
+    provisionados_resp = MagicMock(status_code=200)
+    provisionados_resp.raise_for_status.return_value = None
+    provisionados_resp.json.return_value = {"_pageable": {"totalRecords": "0"}}
+
     conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
 
-    with pytest.raises(NotImplementedError):
-        conector.baixar_extrato("13000821-0", date(2026, 9, 1), date(2026, 9, 15))
+    def fake_get(url, **kwargs):
+        return efetivos_resp if "/transactions/" in url else provisionados_resp
+
+    with patch("connectors.santander.requests.post", return_value=token_resp), patch(
+        "connectors.santander.requests.get", side_effect=fake_get
+    ):
+        extrato = conector.baixar_extrato("13000821-0", date(2026, 9, 1), date(2026, 9, 30))
+
+    assert extrato.pdf is not None and extrato.pdf.startswith(b"%PDF")
+    assert extrato.ofx is not None and b"<TRNAMT>636.27" in extrato.ofx
+    assert extrato.xlsx is not None
+    assert extrato.indisponiveis is None
+
+
+def test_santander_pagina_ate_esgotar_nextpage(monkeypatch, tmp_path):
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_ID", "id")
+    monkeypatch.setenv("DPA_SANTANDER_CLIENT_SECRET", "secret")
+    monkeypatch.setenv("DPA_SANTANDER_CERT_CRT", str(tmp_path / "c.crt"))
+    monkeypatch.setenv("DPA_SANTANDER_CERT_KEY", str(tmp_path / "c.key"))
+
+    token_resp = MagicMock(status_code=200)
+    token_resp.raise_for_status.return_value = None
+    token_resp.json.return_value = {"access_token": "tok789"}
+
+    pagina_1 = MagicMock(status_code=200)
+    pagina_1.raise_for_status.return_value = None
+    pagina_1.json.return_value = {
+        "_content": [{"creditDebitType": "DEBITO", "transactionName": "A", "amount": "1.00", "transactionDate": "01/09/2026", "documentNumber": "1"}],
+        "_pageable": {"totalRecords": "2", "paging": "abc123"},
+    }
+    pagina_2 = MagicMock(status_code=200)
+    pagina_2.raise_for_status.return_value = None
+    pagina_2.json.return_value = {
+        "_content": [{"creditDebitType": "DEBITO", "transactionName": "B", "amount": "2.00", "transactionDate": "02/09/2026", "documentNumber": "2"}],
+        "_pageable": {"totalRecords": "2"},
+    }
+    vazio = MagicMock(status_code=200)
+    vazio.raise_for_status.return_value = None
+    vazio.json.return_value = {"_pageable": {"totalRecords": "0"}}
+
+    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+    chamadas = {"n": 0}
+
+    def fake_get(url, **kwargs):
+        if "/provisioneds/" in url:
+            return vazio
+        chamadas["n"] += 1
+        return pagina_1 if chamadas["n"] == 1 else pagina_2
+
+    with patch("connectors.santander.requests.post", return_value=token_resp), patch(
+        "connectors.santander.requests.get", side_effect=fake_get
+    ):
+        itens = conector._buscar_paginado("/transactions", "4177.000130008210", date(2026, 9, 1), date(2026, 9, 30))
+
+    assert len(itens) == 2
+    assert chamadas["n"] == 2
 
 
 def test_sicoob_erro_500_propaga(monkeypatch, tmp_path):

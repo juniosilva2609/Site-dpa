@@ -49,16 +49,14 @@ empresas:
         integracao:
           tipo: api_oficial
           provider: santander_developers
-          # Aplicação "Plataforma ERP-DPA API SANTAND" criada e aprovada em
-          # 30/09/2026 (produto Balance and Extract). Client ID/Secret,
-          # certificado e chave do e-CNPJ guardados em
-          # ~/.dpa-secrets/santander.env. Autenticação (OAuth2 + mTLS)
-          # CONFIRMADA por chamada real em 30/09/2026. Falta só o caminho
-          # exato do endpoint de extrato/saldo (visível no Portal Santander
-          # Developers já logado, na documentação da aplicação) — enquanto
-          # isso o status continua pendente_cadastro; connectors/runner.py
-          # só chama este conector quando o status virar ativo.
-          status: pendente_cadastro
+          # Validado de ponta a ponta em 30/09/2026: autenticação real +
+          # GET /transactions e /provisioneds reais (competência 09/2026,
+          # lançamentos de verdade) + OFX/Excel/PDF gerados localmente
+          # (connectors/santander.py + santander_pdf.py, reportlab, mesmo
+          # padrão do Inter/Sicoob — a API do Santander não exporta
+          # PDF/OFX/Excel nativamente). Credenciais em
+          # ~/.dpa-secrets/santander.env.
+          status: ativo
           escopo_necessario: "extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_SANTANDER_CLIENT_ID

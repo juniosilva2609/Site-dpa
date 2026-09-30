@@ -52,7 +52,7 @@ bancos/empresas no orquestrador.
 | Banco | Status |
 |---|---|
 | Inter | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, PDF nativo da API, OFX/Excel gerados localmente). Falta só a agência/conta para nomear os arquivos. |
-| Santander | pendente de cadastro |
+| Santander | ✅ **ativo** — testado de ponta a ponta em 30/09/2026 (autenticação real, extrato real via `/transactions` + `/provisioneds`, PDF/OFX/Excel gerados localmente). |
 | Sicoob | ✅ **ativo** — testado de ponta a ponta em 16/09/2026 (autenticação real, extrato real, PDF/OFX/Excel completos, arquivos organizados no Drive). |
 
 A política de rede restritiva do ambiente ("trusted network access", que

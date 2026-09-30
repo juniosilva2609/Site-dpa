@@ -111,21 +111,24 @@ Variáveis de ambiente esperadas:
 `DPA_SANTANDER_CLIENT_ID`, `DPA_SANTANDER_CLIENT_SECRET`,
 `DPA_SANTANDER_CERT_CRT`, `DPA_SANTANDER_CERT_KEY`.
 
-**Em andamento (30/09/2026)** — aplicação "Plataforma ERP-DPA API SANTAND"
-criada e aprovada, certificado do e-CNPJ da DPA aceito pelo banco. Client ID,
-Client Secret e o certificado já estão guardados em
-`~/.dpa-secrets/santander.env` e `connectors/santander.py` já implementa a
-autenticação (mesmo padrão do Inter/Sicoob: OAuth2 client_credentials +
-mTLS, host `trust-open.api.santander.com.br`). Falta:
-- **A chave privada** do certificado — está dentro do `.pfx` do e-CNPJ,
-  protegido por senha, ainda não extraída. Extrair com (no computador onde
-  está o `.pfx`; acrescentar `-legacy` se der erro de algoritmo):
-  ```
-  openssl pkcs12 -in certificado.pfx -nocerts -nodes -out chave.key
-  ```
-- **Confirmar o endpoint de extrato** do produto Balance and Extract com uma
-  chamada real (o caminho usado em `connectors/santander.py` é um TODO —
-  ainda não validado) — só então `integracao.status` vira `ativo`.
+**✅ Ativado e testado em 30/09/2026** — aplicação "Plataforma ERP-DPA API
+SANTAND" (produto "Saldo e Extrato" / API "Bank Account Information" v1.0.0),
+contrato confirmado por chamada real:
+- Token: `POST /auth/oauth/v2/token` (host `trust-open.api.santander.com.br`,
+  client_id + client_secret + grant_type=client_credentials, mTLS).
+- Extrato de conta Santander própria: combina
+  `GET /bank_account_information/v1/transactions/{agencia.conta}`
+  (lançamentos efetivos) e `.../provisioneds/{agencia.conta}` (lançamentos
+  provisionados) — `{agencia.conta}` é a agência (4 dígitos) + "." + conta
+  com dígito só números, zero-padded a 12 dígitos (ex.: `4177.000130008210`).
+  Cada chamada também exige o header `X-Application-Key: <client_id>`.
+- **Não há exportação nativa de PDF/OFX/Excel** nessa API — o conector
+  (`connectors/santander.py`) gera os três localmente a partir do JSON de
+  transações (`connectors/santander_pdf.py` para o PDF, reportlab, mesmo
+  padrão do Inter/Sicoob).
+- Contrato completo (parâmetros, paginação, divergências entre a
+  especificação técnica e a doc funcional do Portal) documentado no
+  docstring de `connectors/santander.py`.
 
 ## Como as credenciais ficam guardadas neste ambiente
 
