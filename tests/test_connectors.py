@@ -34,7 +34,16 @@ def test_inter_autentica_e_baixa_extrato(monkeypatch, tmp_path):
         ]
     }
 
-    conector = InterConnector(agencia="0001", razao_social="Teste Ltda")
+    conector = InterConnector(
+        agencia="0001",
+        razao_social="Teste Ltda",
+        credenciais_env={
+            "client_id": "DPA_INTER_CLIENT_ID",
+            "client_secret": "DPA_INTER_CLIENT_SECRET",
+            "certificado": "DPA_INTER_CERT_CRT",
+            "chave_privada": "DPA_INTER_CERT_KEY",
+        },
+    )
 
     with patch("connectors.inter.requests.post", return_value=token_resp) as post, patch(
         "connectors.inter.requests.get", return_value=extrato_resp
@@ -54,7 +63,16 @@ def test_inter_erro_401_propaga(monkeypatch, tmp_path):
     monkeypatch.setenv("DPA_INTER_CLIENT_SECRET", "secret")
     monkeypatch.setenv("DPA_INTER_CERT_CRT", str(tmp_path / "c.crt"))
     monkeypatch.setenv("DPA_INTER_CERT_KEY", str(tmp_path / "c.key"))
-    conector = InterConnector(agencia="0001", razao_social="Teste")
+    conector = InterConnector(
+        agencia="0001",
+        razao_social="Teste",
+        credenciais_env={
+            "client_id": "DPA_INTER_CLIENT_ID",
+            "client_secret": "DPA_INTER_CLIENT_SECRET",
+            "certificado": "DPA_INTER_CERT_CRT",
+            "chave_privada": "DPA_INTER_CERT_KEY",
+        },
+    )
 
     resp = MagicMock(status_code=401)
     resp.raise_for_status.side_effect = requests.exceptions.HTTPError(response=resp)
@@ -97,7 +115,14 @@ def test_sicoob_autentica_e_baixa_extrato(monkeypatch, tmp_path):
     }
 
     conector = SicoobConnector(
-        cooperativa="4030-4", cooperativa_nome="SICOOB DIVICRED", razao_social="Teste Ltda"
+        cooperativa="4030-4",
+        cooperativa_nome="SICOOB DIVICRED",
+        razao_social="Teste Ltda",
+        credenciais_env={
+            "client_id": "DPA_SICOOB_CLIENT_ID",
+            "certificado_pem": "DPA_SICOOB_CERT_PEM",
+            "chave_privada": "DPA_SICOOB_CERT_KEY",
+        },
     )
 
     with patch("connectors.sicoob.requests.post", return_value=token_resp), patch(
@@ -120,7 +145,16 @@ def test_santander_autentica(monkeypatch, tmp_path):
     token_resp.raise_for_status.return_value = None
     token_resp.json.return_value = {"access_token": "tok789"}
 
-    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+    conector = SantanderConnector(
+        agencia="4177",
+        razao_social="Teste Ltda",
+        credenciais_env={
+            "client_id": "DPA_SANTANDER_CLIENT_ID",
+            "client_secret": "DPA_SANTANDER_CLIENT_SECRET",
+            "certificado": "DPA_SANTANDER_CERT_CRT",
+            "chave_privada": "DPA_SANTANDER_CERT_KEY",
+        },
+    )
 
     with patch("connectors.santander.requests.post", return_value=token_resp) as post:
         conector.autenticar()
@@ -159,7 +193,16 @@ def test_santander_baixa_extrato_efetivos_e_provisionados(monkeypatch, tmp_path)
     provisionados_resp.raise_for_status.return_value = None
     provisionados_resp.json.return_value = {"_pageable": {"totalRecords": "0"}}
 
-    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+    conector = SantanderConnector(
+        agencia="4177",
+        razao_social="Teste Ltda",
+        credenciais_env={
+            "client_id": "DPA_SANTANDER_CLIENT_ID",
+            "client_secret": "DPA_SANTANDER_CLIENT_SECRET",
+            "certificado": "DPA_SANTANDER_CERT_CRT",
+            "chave_privada": "DPA_SANTANDER_CERT_KEY",
+        },
+    )
 
     def fake_get(url, **kwargs):
         return efetivos_resp if "/transactions/" in url else provisionados_resp
@@ -201,7 +244,16 @@ def test_santander_pagina_ate_esgotar_nextpage(monkeypatch, tmp_path):
     vazio.raise_for_status.return_value = None
     vazio.json.return_value = {"_pageable": {"totalRecords": "0"}}
 
-    conector = SantanderConnector(agencia="4177", razao_social="Teste Ltda")
+    conector = SantanderConnector(
+        agencia="4177",
+        razao_social="Teste Ltda",
+        credenciais_env={
+            "client_id": "DPA_SANTANDER_CLIENT_ID",
+            "client_secret": "DPA_SANTANDER_CLIENT_SECRET",
+            "certificado": "DPA_SANTANDER_CERT_CRT",
+            "chave_privada": "DPA_SANTANDER_CERT_KEY",
+        },
+    )
     chamadas = {"n": 0}
 
     def fake_get(url, **kwargs):
@@ -223,7 +275,16 @@ def test_sicoob_erro_500_propaga(monkeypatch, tmp_path):
     monkeypatch.setenv("DPA_SICOOB_CLIENT_ID", "id")
     monkeypatch.setenv("DPA_SICOOB_CERT_PEM", str(tmp_path / "c.pem"))
     monkeypatch.setenv("DPA_SICOOB_CERT_KEY", str(tmp_path / "c.key"))
-    conector = SicoobConnector(cooperativa="4030-4", cooperativa_nome="X", razao_social="Teste")
+    conector = SicoobConnector(
+        cooperativa="4030-4",
+        cooperativa_nome="X",
+        razao_social="Teste",
+        credenciais_env={
+            "client_id": "DPA_SICOOB_CLIENT_ID",
+            "certificado_pem": "DPA_SICOOB_CERT_PEM",
+            "chave_privada": "DPA_SICOOB_CERT_KEY",
+        },
+    )
 
     resp = MagicMock(status_code=500)
     resp.raise_for_status.side_effect = requests.exceptions.HTTPError(response=resp)

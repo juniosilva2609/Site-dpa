@@ -34,15 +34,20 @@ logger = logging.getLogger("fechamento")
 
 FABRICAS_CONECTOR: dict[str, Callable[[dict, dict], BankConnector]] = {
     "banco_inter": lambda banco, empresa: InterConnector(
-        agencia=banco["agencia"], razao_social=empresa["razao_social"]
+        agencia=banco["agencia"],
+        razao_social=empresa["razao_social"],
+        credenciais_env=banco["integracao"]["credenciais_env"],
     ),
     "sicoob_developers": lambda banco, empresa: SicoobConnector(
         cooperativa=banco["cooperativa"],
         cooperativa_nome=banco["cooperativa_nome"],
         razao_social=empresa["razao_social"],
+        credenciais_env=banco["integracao"]["credenciais_env"],
     ),
     "santander_developers": lambda banco, empresa: SantanderConnector(
-        agencia=banco["agencia"], razao_social=empresa["razao_social"]
+        agencia=banco["agencia"],
+        razao_social=empresa["razao_social"],
+        credenciais_env=banco["integracao"]["credenciais_env"],
     ),
 }
 

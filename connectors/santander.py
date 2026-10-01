@@ -64,14 +64,14 @@ def _conta_padded(conta: str) -> str:
 class SantanderConnector(BankConnector):
     nome = "Santander"
 
-    def __init__(self, agencia: str, razao_social: str):
+    def __init__(self, agencia: str, razao_social: str, credenciais_env: dict):
         self.agencia = agencia
         self.razao_social = razao_social
-        self.client_id = os.environ["DPA_SANTANDER_CLIENT_ID"]
-        self.client_secret = os.environ["DPA_SANTANDER_CLIENT_SECRET"]
+        self.client_id = os.environ[credenciais_env["client_id"]]
+        self.client_secret = os.environ[credenciais_env["client_secret"]]
         self.cert = (
-            os.environ["DPA_SANTANDER_CERT_CRT"],
-            os.environ["DPA_SANTANDER_CERT_KEY"],
+            os.environ[credenciais_env["certificado"]],
+            os.environ[credenciais_env["chave_privada"]],
         )
         self._token: str | None = None
 

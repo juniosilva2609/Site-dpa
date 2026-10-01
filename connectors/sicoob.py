@@ -47,11 +47,11 @@ def _numero_conta_sem_pontuacao(conta: str) -> str:
 class SicoobConnector(BankConnector):
     nome = "Sicoob"
 
-    def __init__(self, cooperativa: str, cooperativa_nome: str, razao_social: str):
-        self.client_id = os.environ["DPA_SICOOB_CLIENT_ID"]
+    def __init__(self, cooperativa: str, cooperativa_nome: str, razao_social: str, credenciais_env: dict):
+        self.client_id = os.environ[credenciais_env["client_id"]]
         self.cert = (
-            os.environ["DPA_SICOOB_CERT_PEM"],
-            os.environ["DPA_SICOOB_CERT_KEY"],
+            os.environ[credenciais_env["certificado_pem"]],
+            os.environ[credenciais_env["chave_privada"]],
         )
         self.cooperativa = cooperativa
         self.cooperativa_nome = cooperativa_nome
