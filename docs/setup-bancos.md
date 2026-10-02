@@ -130,6 +130,36 @@ contrato confirmado por chamada real:
   especificação técnica e a doc funcional do Portal) documentado no
   docstring de `connectors/santander.py`.
 
+## C6 Bank (Licitprint) — ⏳ pendente de cadastro
+
+Fonte: [C6 Developers](https://developers.c6bank.com.br/). Conta PJ (C6
+Empresas). Autenticação OAuth2 `client_credentials` + mTLS (certificado
+.crt + chave .key emitidos pelo próprio C6), mesmo modelo do Inter/Santander.
+A rede deste ambiente já alcança os hosts da API do C6
+(`baas-api.c6bank.info`), conferido em 02/10/2026.
+
+1. Acesse o internet banking do **C6 Empresas** da Licitprint (computador).
+2. Clique nos **três pontinhos** ao lado do nome da empresa →
+   **Integrações via API** → **Nova chave**.
+3. Campo **Parceiro**: o C6 vincula a chave a um parceiro. Se for possível
+   gerar sem um parceiro de terceiros, siga; se exigir parceiro cadastrado,
+   o caminho é o onboarding no portal C6 Developers (sandbox → evidências →
+   termo de uso → aprovação para produção).
+4. Permissões: **somente saldo/extrato**. Nada de Pix, pagamentos,
+   transferências ou boletos.
+5. Confirme com senha + token do app. O C6 mostra **ClientID** e
+   **ClientSecret** e oferece um **.zip com .crt e .key** — **baixe na hora**,
+   não é possível baixar de novo depois.
+
+Variáveis de ambiente esperadas (ver `config/empresas.yaml`):
+`DPA_LICITPRINT_C6_CLIENT_ID`, `DPA_LICITPRINT_C6_CLIENT_SECRET`,
+`DPA_LICITPRINT_C6_CERT_CRT`, `DPA_LICITPRINT_C6_CERT_KEY`.
+
+Periodicidade **mensal**: só roda no disparo do dia 01, baixando o mês
+anterior inteiro (competência `MM-AAAA`). Falta: agência/conta, o conector
+(`connectors/c6.py`, com endpoints confirmados por chamada real) e o teste
+de ponta a ponta antes de virar `status: ativo`.
+
 ## Como as credenciais ficam guardadas neste ambiente
 
 Este ambiente não oferece um mecanismo de "variável de ambiente" permanente

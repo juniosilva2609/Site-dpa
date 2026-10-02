@@ -16,6 +16,7 @@ import yaml
 CAMPOS_OBRIGATORIOS_EMPRESA = ("id", "razao_social", "status", "drive", "bancos")
 CAMPOS_OBRIGATORIOS_BANCO = ("id", "nome_exibicao", "conta", "agencia", "integracao")
 CAMPOS_OBRIGATORIOS_INTEGRACAO = ("tipo", "provider", "status")
+PERIODICIDADES = ("quinzenal", "mensal")
 
 
 class ConfigInvalida(ValueError):
@@ -59,6 +60,12 @@ def _validar_banco(banco: dict, empresa_id: str, caminho: Path) -> None:
     for campo in CAMPOS_OBRIGATORIOS_BANCO:
         if campo not in banco:
             raise ConfigInvalida(f"{prefixo} sem campo obrigatório '{campo}'")
+
+    periodicidade = banco.get("periodicidade", "quinzenal")
+    if periodicidade not in PERIODICIDADES:
+        raise ConfigInvalida(
+            f"{prefixo}.periodicidade '{periodicidade}' inválida — use um de {PERIODICIDADES}"
+        )
 
     integracao = banco["integracao"]
     for campo in CAMPOS_OBRIGATORIOS_INTEGRACAO:

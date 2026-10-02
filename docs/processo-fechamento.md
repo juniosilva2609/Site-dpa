@@ -29,6 +29,10 @@ domínios — ver `docs/setup-bancos.md`.
 1. **Determinar a competência** a partir da data do disparo:
    - dia 16 → período = dia 01 ao dia 15 do mês corrente (`Q1`).
    - dia 01 → período = dia 16 ao último dia do mês anterior (`Q2`).
+   - Exceção: banco com `periodicidade: mensal` em `config/empresas.yaml`
+     (ex: C6 da Licitprint) é pulado no dia 16 e, no dia 01, baixa o mês
+     anterior inteiro (competência `MM-AAAA`, sem Q1/Q2) —
+     `connectors/runner.py:periodo_do_banco`.
 2. **Autenticar** na API do banco (OAuth2 + certificado mTLS), usando as
    variáveis de ambiente listadas em `config/empresas.yaml`.
 3. **Consultar o extrato** do período para a conta cadastrada.

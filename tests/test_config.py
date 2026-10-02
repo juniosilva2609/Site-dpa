@@ -65,3 +65,38 @@ empresas:
     )
     with pytest.raises(ConfigInvalida, match="razao_social"):
         carregar_empresas(caminho)
+
+
+def _yaml_com_periodicidade(periodicidade_linha: str) -> str:
+    return f"""
+empresas:
+  - id: teste
+    razao_social: Teste Ltda
+    status: ativo
+    drive:
+      extratos_id: "abc"
+    bancos:
+      - id: c6
+        nome_exibicao: C6
+        conta: "123"
+        agencia: "0001"
+{periodicidade_linha}
+        integracao:
+          tipo: api_oficial
+          provider: c6_bank
+          status: pendente_cadastro
+"""
+
+
+def test_periodicidade_invalida_falha(tmp_path):
+    caminho = tmp_path / "empresas.yaml"
+    caminho.write_text(_yaml_com_periodicidade("        periodicidade: semanal"), encoding="utf-8")
+    with pytest.raises(ConfigInvalida, match="periodicidade"):
+        carregar_empresas(caminho)
+
+
+def test_periodicidade_mensal_e_ausente_sao_validas(tmp_path):
+    for linha in ("        periodicidade: mensal", ""):
+        caminho = tmp_path / "empresas.yaml"
+        caminho.write_text(_yaml_com_periodicidade(linha), encoding="utf-8")
+        assert carregar_empresas(caminho)[0]["bancos"][0]["id"] == "c6"

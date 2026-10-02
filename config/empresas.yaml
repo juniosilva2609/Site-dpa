@@ -145,5 +145,26 @@ empresas:
             certificado: DPA_LICITPRINT_INTER_CERT_CRT
             chave_privada: DPA_LICITPRINT_INTER_CERT_KEY
 
+      - id: c6
+        nome_exibicao: "C6"
+        codigo_padrao_nome: "C6"
+        conta: "a_informar"
+        agencia: "a_informar"
+        # Só no disparo do dia 1, mês anterior inteiro (competência MM-AAAA).
+        periodicidade: mensal
+        integracao:
+          tipo: api_oficial
+          provider: c6_bank
+          # Aguardando a chave de API gerada no internet banking C6 Empresas
+          # (Integrações via API → Nova chave) — ver docs/setup-bancos.md.
+          # Conector (connectors/c6.py) ainda não implementado.
+          status: pendente_cadastro
+          escopo_necessario: "saldo/extrato (somente leitura)"
+          credenciais_env:
+            client_id: DPA_LICITPRINT_C6_CLIENT_ID
+            client_secret: DPA_LICITPRINT_C6_CLIENT_SECRET
+            certificado: DPA_LICITPRINT_C6_CERT_CRT
+            chave_privada: DPA_LICITPRINT_C6_CERT_KEY
+
 # Fora de escopo (não são conta corrente para conciliação de extrato):
 # - Pronampe (linha de crédito, comprovantes tratados à parte)

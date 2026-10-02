@@ -134,6 +134,19 @@ def processar_banco(
     return ResultadoBanco(empresa_id, banco_id, "baixado", arquivos=arquivos)
 
 
+def periodo_do_banco(banco: dict, inicio: date, fim: date) -> tuple[date, date] | None:
+    """Período que este banco deve baixar no disparo [inicio, fim].
+
+    Banco `mensal` só roda no disparo do dia 1 (período Q2 do mês anterior)
+    e baixa o mês inteiro; no disparo do dia 16 (período Q1) devolve None.
+    """
+    if banco.get("periodicidade", "quinzenal") == "quinzenal":
+        return inicio, fim
+    if inicio.day == 1:
+        return None
+    return inicio.replace(day=1), fim
+
+
 def processar_periodo(
     inicio: date,
     fim: date,
@@ -152,11 +165,13 @@ def processar_periodo(
         if empresa.get("status") != "ativo":
             continue
         for banco in empresa["bancos"]:
+            periodo = periodo_do_banco(banco, inicio, fim)
+            if periodo is None:
+                continue
             resultado = processar_banco(
                 empresa,
                 banco,
-                inicio,
-                fim,
+                *periodo,
                 montar_nome,
                 existentes_por_tipo=existentes.get((empresa["id"], banco["id"])),
             )

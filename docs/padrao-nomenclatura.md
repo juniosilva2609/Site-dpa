@@ -10,7 +10,9 @@ EMPRESA_BANCO_CONTA_COMPETENCIA_TIPO.ext
 - **COMPETENCIA**: mês/ano + quinzena, no formato `MM-AAAA-Q1` ou `MM-AAAA-Q2`.
   - `Q1` = extrato do dia 01 ao dia 15 do mês.
   - `Q2` = extrato do dia 16 ao último dia do mês.
-  - O arquivo é arquivado na pasta do **mês a que a quinzena pertence**, independentemente do dia em que o download foi feito.
+  - Bancos com `periodicidade: mensal` em `config/empresas.yaml` (ex: C6 da
+    Licitprint) usam o mês inteiro, sem sufixo de quinzena: `MM-AAAA`.
+  - O arquivo é arquivado na pasta do **mês a que a competência pertence**, independentemente do dia em que o download foi feito.
 - **TIPO**: `PDF`, `OFX` ou `EXCEL`.
 
 ## Exemplos
@@ -19,6 +21,7 @@ EMPRESA_BANCO_CONTA_COMPETENCIA_TIPO.ext
 DPA_INTER_12345_08-2026-Q1_PDF.pdf
 DPA_INTER_12345_08-2026-Q1_OFX.ofx
 DPA_SANTANDER_67890_08-2026-Q2_EXCEL.xlsx
+LICITPRINT_C6_12345678_08-2026_PDF.pdf      (banco mensal)
 ```
 
 ## Regra de não sobrescrita
@@ -35,3 +38,6 @@ Antes de gravar qualquer arquivo, a automação verifica se já existe um arquiv
 |---|---|---|
 | Dia 16 de cada mês | dia 01 a 15 do mês corrente | `MM-AAAA-Q1` |
 | Dia 01 de cada mês | dia 16 ao último dia do mês anterior | `MM-AAAA-Q2` (mês anterior) |
+| Dia 01 de cada mês — só bancos `periodicidade: mensal` | dia 01 ao último dia do mês anterior | `MM-AAAA` (mês anterior) |
+
+Bancos mensais não rodam no disparo do dia 16.

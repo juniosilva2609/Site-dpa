@@ -119,3 +119,66 @@ empresas:
     por_empresa = {r.empresa_id: r for r in resultados}
     assert por_empresa["empresa1"].status == "erro"
     assert por_empresa["empresa2"].status == "baixado"
+
+
+class _ConectorRegistraPeriodo(BankConnector):
+    nome = "Registra"
+
+    def __init__(self, chamadas, banco_id):
+        self._chamadas = chamadas
+        self._banco_id = banco_id
+
+    def autenticar(self):
+        pass
+
+    def baixar_extrato(self, conta, inicio, fim):
+        self._chamadas.append((self._banco_id, inicio, fim))
+        return Extrato(pdf=b"x", ofx=None, xlsx=None)
+
+
+YAML_MENSAL_E_QUINZENAL = """
+empresas:
+  - id: empresa1
+    razao_social: Empresa 1
+    status: ativo
+    drive: {extratos_id: "a"}
+    bancos:
+      - id: quinzenal
+        nome_exibicao: Q
+        conta: "1"
+        agencia: "0001"
+        integracao: {tipo: api_oficial, provider: registra, status: ativo, credenciais_env: {x: Y}}
+      - id: mensal
+        nome_exibicao: M
+        conta: "2"
+        agencia: "0001"
+        periodicidade: mensal
+        integracao: {tipo: api_oficial, provider: registra, status: ativo, credenciais_env: {x: Y}}
+"""
+
+
+def _rodar_com_registro(tmp_path, monkeypatch, inicio, fim):
+    caminho = tmp_path / "empresas.yaml"
+    caminho.write_text(YAML_MENSAL_E_QUINZENAL, encoding="utf-8")
+    chamadas = []
+    monkeypatch.setitem(
+        runner.FABRICAS_CONECTOR,
+        "registra",
+        lambda banco, empresa: _ConectorRegistraPeriodo(chamadas, banco["id"]),
+    )
+    resultados = runner.processar_periodo(inicio, fim, _montar_nome, caminho_config=caminho)
+    return chamadas, resultados
+
+
+def test_banco_mensal_e_pulado_no_disparo_do_dia_16(tmp_path, monkeypatch):
+    chamadas, resultados = _rodar_com_registro(tmp_path, monkeypatch, date(2026, 10, 1), date(2026, 10, 15))
+    assert chamadas == [("quinzenal", date(2026, 10, 1), date(2026, 10, 15))]
+    assert [r.banco_id for r in resultados] == ["quinzenal"]
+
+
+def test_banco_mensal_baixa_mes_inteiro_no_disparo_do_dia_1(tmp_path, monkeypatch):
+    chamadas, _ = _rodar_com_registro(tmp_path, monkeypatch, date(2026, 9, 16), date(2026, 9, 30))
+    assert chamadas == [
+        ("quinzenal", date(2026, 9, 16), date(2026, 9, 30)),
+        ("mensal", date(2026, 9, 1), date(2026, 9, 30)),
+    ]
