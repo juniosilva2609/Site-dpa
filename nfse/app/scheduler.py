@@ -112,21 +112,56 @@ def alertas_certificado(con: sqlite3.Connection) -> None:
             return
 
 
-def backup_diario(con: sqlite3.Connection) -> str | None:
-    """Uma cópia consistente do banco por dia (API de backup do SQLite), 14 dias de histórico; copia também
-    para <pasta de saída>/_backup quando a entrega em pasta está ligada."""
+def _contagens(con: sqlite3.Connection) -> dict:
+    return {t: con.execute(f"SELECT COUNT(*) FROM {t}").fetchone()[0] for t in ("nota", "cliente", "usuario")}
+
+
+def _verificar_backup(antes: dict, arquivo) -> None:
+    """Teste de restauração: abre a cópia, roda o integrity_check e confere que ela tem pelo menos os registros
+    que o banco tinha quando o backup começou."""
+    cop = sqlite3.connect(str(arquivo))
+    try:
+        if cop.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise RuntimeError("integrity_check falhou na cópia")
+        for tabela, a in antes.items():
+            b = cop.execute(f"SELECT COUNT(*) FROM {tabela}").fetchone()[0]
+            if b < a:
+                raise RuntimeError(f"cópia com menos registros em {tabela} ({b} < {a})")
+    finally:
+        cop.close()
+
+
+def backup_diario(con: sqlite3.Connection, forcar: bool = False) -> str | None:
+    """Uma cópia consistente do banco por dia (API de backup do SQLite) COM verificação de restauração, 14 dias
+    de histórico. Copia também para <pasta de saída>/_backup (se a entrega em pasta estiver ligada) e, se
+    NFSE_BACKUP_EMAIL=1, envia a cópia compactada por e-mail (o banco tem CPF/CNPJ de clientes: opt-in)."""
+    import gzip
+    import os
+
     from . import config
     hoje = util.agora().strftime("%Y%m%d")
-    if _estado(con, "backup_dia") == hoje:
+    if not forcar and _estado(con, "backup_dia") == hoje:
         return None
     pasta = config.pasta_dados() / "backups"
     pasta.mkdir(parents=True, exist_ok=True)
     destino = pasta / f"nfse-{hoje}.db"
+    antes = _contagens(con)
     alvo = sqlite3.connect(str(destino))
     try:
         con.backup(alvo)
     finally:
         alvo.close()
+    try:
+        _verificar_backup(antes, destino)
+    except Exception as e:  # noqa: BLE001
+        destino.unlink(missing_ok=True)
+        alertas.abrir(con, "backup-invalido", f"O backup de hoje FALHOU na verificação e foi descartado: {e}", "erro")
+        return None
+    alertas.resolver(con, "backup-invalido")
+    try:
+        os.chmod(destino, 0o600)
+    except OSError:
+        pass
     for velho in sorted(pasta.glob("nfse-*.db"))[:-14]:
         velho.unlink(missing_ok=True)
     cfg = db.obter_config(con)
@@ -137,19 +172,63 @@ def backup_diario(con: sqlite3.Connection) -> str | None:
             shutil.copy2(destino, extra / destino.name)
             for velho in sorted(extra.glob("nfse-*.db"))[:-14]:
                 velho.unlink(missing_ok=True)
+            alertas.resolver(con, "backup-pasta")
         except OSError as e:
             alertas.abrir(con, "backup-pasta", f"Não consegui copiar o backup para a pasta de saída: {e}", "aviso")
+    if os.environ.get("NFSE_BACKUP_EMAIL") == "1":
+        destinos = saida.lista_emails(cfg["email_alertas"]) or saida.lista_emails(cfg["emails_destino"])
+        try:
+            saida.enviar_email(destinos, f"NFS-e: backup do banco {hoje}", "Backup diário do banco de dados (compactado).",
+                               [(f"{destino.name}.gz", gzip.compress(destino.read_bytes()), "application/gzip")])
+            alertas.resolver(con, "backup-email")
+        except Exception as e:  # noqa: BLE001
+            alertas.abrir(con, "backup-email", f"Não consegui enviar o backup por e-mail: {e}", "aviso")
     _estado(con, "backup_dia", hoje)
     return str(destino)
 
 
+def restaurar_backup(arquivo, caminho_banco=None) -> str:
+    """Restaura um backup (com o servidor PARADO): valida a cópia, guarda o banco atual ao lado e substitui.
+    Uso: python run.py restaurar <arquivo.db>"""
+    import os
+    from pathlib import Path
+
+    from . import config
+    arquivo = Path(arquivo)
+    cop = sqlite3.connect(str(arquivo))
+    try:
+        if cop.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
+            raise RuntimeError("O arquivo de backup está corrompido (integrity_check).")
+        cop.execute("SELECT COUNT(*) FROM nota").fetchone()
+    finally:
+        cop.close()
+    atual = Path(caminho_banco or config.caminho_banco())
+    guarda = None
+    if atual.exists():
+        guarda = atual.with_name(f"{atual.stem}-antes-de-restaurar-{util.agora().strftime('%Y%m%d%H%M%S')}.db")
+        shutil.copy2(atual, guarda)
+    for sufixo in ("-wal", "-shm"):
+        Path(str(atual) + sufixo).unlink(missing_ok=True)
+    shutil.copy2(arquivo, atual)
+    os.chmod(atual, 0o600)
+    return str(guarda) if guarda else "(não havia banco anterior)"
+
+
+def _seguro(con, nome, funcao) -> None:
+    """Um passo da manutenção nunca impede os outros; a falha vira alerta."""
+    try:
+        funcao(con)
+        alertas.resolver(con, f"manutencao-{nome}")
+    except Exception as e:  # noqa: BLE001
+        log.exception("manutenção: %s", nome)
+        alertas.abrir(con, f"manutencao-{nome}", f"Falha na rotina '{nome}': {e}", "aviso")
+
+
 def manutencao(con: sqlite3.Connection) -> None:
-    recuperar_emissoes_travadas(con)
-    lembretes_conferencia(con)
-    alertas_certificado(con)
-    entregas_pendentes(con)
-    backup_diario(con)
-    alertas.enviar_pendentes(con)
+    for nome, passo in (("emissoes-travadas", recuperar_emissoes_travadas), ("lembretes", lembretes_conferencia),
+                        ("certificado", alertas_certificado), ("entregas", entregas_pendentes),
+                        ("backup", backup_diario), ("alertas-email", alertas.enviar_pendentes)):
+        _seguro(con, nome, passo)
 
 
 def tick(con: sqlite3.Connection, agora: datetime | None = None, forcar_manutencao: bool = False) -> dict:

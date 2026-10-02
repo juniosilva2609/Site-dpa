@@ -11,6 +11,8 @@ services:
       mountPath: /var/data
       sizeGB: 1
     envVars:
+      - key: NFSE_PROXY
+        value: "1"
       - key: NFSE_DATA_DIR
         value: /var/data
       - key: NFSE_SAIDA_DIR

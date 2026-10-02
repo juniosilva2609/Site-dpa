@@ -1,7 +1,9 @@
 # -*- coding: utf-8 -*-
 """Atalhos:  python run.py            -> servidor de desenvolvimento (com agendador)
              python run.py agendador  -> só o agendador (sem telas)
-             python run.py ciclo      -> executa UM ciclo (para usar com cron) e sai"""
+             python run.py ciclo      -> executa UM ciclo (para usar com cron) e sai
+             python run.py backup     -> faz e verifica um backup agora
+             python run.py restaurar ARQUIVO.db -> restaura um backup (com o servidor PARADO)"""
 
 import sys
 import time
@@ -17,6 +19,11 @@ if __name__ == "__main__":
         con = db.conectar(app.config["DB_PATH"])
         if modo == "ciclo":
             print(scheduler.tick(con, forcar_manutencao=True))
+        elif modo == "backup":
+            print(scheduler.backup_diario(con, forcar=True) or "Falhou: veja o alerta no painel.")
+        elif modo == "restaurar" and len(sys.argv) > 2:
+            con.close()
+            print("Banco anterior guardado em:", scheduler.restaurar_backup(sys.argv[2], app.config["DB_PATH"]))
         elif modo == "agendador":
             while True:
                 scheduler.tick(con)

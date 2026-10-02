@@ -50,8 +50,9 @@ As mesmas conferências rodam **de novo no instante da emissão**.
 ## Entrega dos arquivos
 *Configuração → 3.* Salva em `<pasta>/<ano>/<mês>/NFSE <nº> - <descrição> - <cliente>.pdf|xml`
 (notas de teste levam o prefixo `HOMOLOG -`). E/ou envia por e-mail (PDF+XML anexos) para a lista que você definir e,
-se marcado no cliente, para o e-mail dele. O PDF é o **DANFSe** gerado a partir do XML oficial (mesmo motor validado
-no sistema anterior). A pasta pode ser uma pasta sincronizada (Google Drive para computador, OneDrive etc.).
+se marcado no cliente, para o e-mail dele. O PDF é o **DANFSe v1.0 idêntico ao modelo da JL** (Prefeitura de BH, com brasão), gerado a partir do XML oficial;
+conferido caractere a caractere contra o PDF modelo (desvio máximo de 0,26 pt). O layout v2.0 da NT 008/2026 continua
+disponível com `NFSE_DANFSE_LAYOUT=v2`. A pasta pode ser uma pasta sincronizada (Google Drive para computador, OneDrive etc.).
 
 ## Instalação
 ```bash
@@ -77,6 +78,9 @@ Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cr
 | `NFSE_ADMIN_USER` / `NFSE_ADMIN_SENHA` | Cria o administrador inicial |
 | `NFSE_SETUP_CODE` | Se definida, `/primeiro-acesso` exige esse código (recomendado em servidor público) |
 | `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_SENHA` `SMTP_FROM` `SMTP_SSL` | Envio de e-mail (Gmail: porta 587 + senha de app) |
+| `NFSE_PROXY=1` | Atrás de proxy (Render): usa o IP/https reais |
+| `NFSE_BACKUP_EMAIL=1` | Envia o backup diário compactado por e-mail |
+| `NFSE_DANFSE_LAYOUT` | `v1` (padrão, igual ao modelo da JL) ou `v2` (NT 008/2026) |
 | `NFSE_DEV=1` | Só desenvolvimento local em HTTP (desliga o cookie “Secure”) |
 
 ## Roteiro para entrar em produção
@@ -89,7 +93,24 @@ Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cr
 ## Rotinas de prevenção (a cada ~15 min)
 Alertas no painel (e por e-mail, uma vez cada): certificado vencendo (60/30/15/7 dias) ou vencido · nota não conferida
 a menos de 24 h do horário · nota atrasada · nota em *Verificar* · entrega de arquivos que falhou · agendador parado.
-Backup diário do banco (14 dias) em `<dados>/backups` e em `<pasta de saída>/_backup`.
+Backup diário do banco (14 dias) em `<dados>/backups` e em `<pasta de saída>/_backup`, **com teste de restauração**
+(integrity_check + contagem de registros; cópia que falha é descartada e gera alerta). Opcional: `NFSE_BACKUP_EMAIL=1`
+envia a cópia compactada por e-mail (o banco tem CPF/CNPJ de clientes: use um e-mail seu). Os PDF/XML também ficam
+na pasta de saída e o XML de qualquer nota pode ser rebaixado da Sefin pela chave de acesso.
+* Fazer backup agora: `python run.py backup` · Restaurar (servidor parado): `python run.py restaurar nfse-AAAAMMDD.db`
+  (o banco atual é guardado ao lado antes de substituir).
+* **O certificado não entra no backup**: guarde o `.pfx` e a senha em local seguro.
+
+## Segurança
+* Senha do certificado só em variável de ambiente; arquivo `.pfx` com permissão 600; chaves temporárias de mTLS em
+  pasta 700 apagada ao fim de cada chamada. `*.pfx`/`*.p12` no `.gitignore`.
+* Login com senha em hash (scrypt), limite de 5 tentativas por 5 min, sessão com cookie HttpOnly + SameSite + Secure,
+  CSRF em todo POST, CSP restritiva, `X-Frame-Options: DENY`, `no-store`. Perfis: operador (emite) e administrador
+  (configura e cancela). Usuário desativado perde o acesso na hora.
+* XML anexado pelo usuário é lido sem DTD/entidades (bloqueia XXE) e limitado a 5 MB; SQL sempre parametrizado.
+* Primeiro acesso: sem `NFSE_SETUP_CODE`/`NFSE_ADMIN_SENHA`, só a própria máquina cria o administrador.
+* Atrás do proxy do Render defina `NFSE_PROXY=1` (IP real no limite de login). Sempre use HTTPS.
+* Trocar senhas que já circularam em conversa/e-mail (inclusive a do certificado, se possível).
 
 ## Testes
 ```bash

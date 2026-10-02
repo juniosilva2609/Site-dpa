@@ -18,6 +18,10 @@ def create_app(db_path: str | None = None, iniciar_agendador: bool | None = None
     app.config["SESSION_COOKIE_SECURE"] = os.environ.get("NFSE_DEV") != "1"
     app.config["PERMANENT_SESSION_LIFETIME"] = 60 * 60 * 12
 
+    if os.environ.get("NFSE_PROXY") == "1":   # atrás do proxy do Render: IP e https reais (limite de login)
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
+
     con = db.conectar(app.config["DB_PATH"])
     db.migrar(con)
     _criar_admin_inicial(con)

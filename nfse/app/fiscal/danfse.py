@@ -129,6 +129,8 @@ from datetime import datetime
 
 import qrcode
 from lxml import etree
+
+from . import xmlseguro
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.utils import ImageReader
@@ -534,7 +536,7 @@ def _qrcode_imagem(chave: str) -> ImageReader:
     return ImageReader(buffer)
 
 
-def gerar_danfse_pdf(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
+def gerar_danfse_pdf_v2(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
     """Monta o PDF do DANFSe v2.0 a partir do XML oficial da NFS-e (já
     autorizado pela Sefin Nacional), com coordenadas físicas absolutas
     replicando o leiaute do DANFSe real do Portal Nacional. Levanta
@@ -551,8 +553,8 @@ def gerar_danfse_pdf(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
     if not xml_nfse:
         raise DanfseIndisponivel("Essa NFS-e não tem o XML oficial salvo -- não dá para montar o DANFSe.")
     try:
-        raiz = etree.fromstring(xml_nfse.encode("utf-8"))
-    except etree.XMLSyntaxError as e:
+        raiz = xmlseguro.parse(xml_nfse)
+    except (etree.XMLSyntaxError, ValueError) as e:
         raise DanfseIndisponivel(f"XML da NFS-e inválido: {e}") from e
 
     inf_nfse = raiz if raiz.tag.endswith("infNFSe") else raiz.find("n:infNFSe", namespaces=_NS)
@@ -881,5 +883,17 @@ def gerar_danfse_para_registro(xml_nfse: str, status: str) -> bytes:
     """Igual a `gerar_danfse_pdf`, mas aplica a marca d'água de CANCELADA
     quando o registro (nosso, não o XML) está marcado como cancelado --
     itens 2.5.1/2.5.2 da NT."""
-    marca_dagua = "CANCELADA" if status == "cancelado" else None
+    marca_dagua = "CANCELADA" if status in ("cancelado", "cancelada") else None
     return gerar_danfse_pdf(xml_nfse, marca_dagua)
+
+
+# Layout padrão: v1.0, idêntico ao PDF do Portal Nacional/Prefeitura de BH que a JL já usa (danfse_v1.py).
+# O motor v2.0 (NT 008/2026) continua disponível em `gerar_danfse_pdf_v2`.
+LAYOUT_PADRAO = os.environ.get("NFSE_DANFSE_LAYOUT", "v1")
+
+
+def gerar_danfse_pdf(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
+    if LAYOUT_PADRAO == "v2":
+        return gerar_danfse_pdf_v2(xml_nfse, marca_dagua)
+    from . import danfse_v1
+    return danfse_v1.gerar_danfse_pdf(xml_nfse, marca_dagua)

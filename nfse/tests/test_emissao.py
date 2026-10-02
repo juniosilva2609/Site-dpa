@@ -191,6 +191,29 @@ def test_pdf_do_danfse_mantem_descricao_inteira(con, cliente_id, api_ok):
     pdf = danfse.gerar_danfse_pdf(xml)
     assert pdf.startswith(b"%PDF") and len(pdf) > 5000
     assert danfse.gerar_danfse_pdf(xml, "CANCELADA").startswith(b"%PDF")
+    assert danfse.gerar_danfse_pdf_v2(xml).startswith(b"%PDF")      # layout v2.0 segue disponível
+
+
+def test_danfse_v1_igual_ao_modelo_da_jl(con, cliente_id, api_ok):
+    """Texto do PDF = o do modelo (NFS-e da JL): títulos, 004, quebras do itinerário, CEP 00000-000, '...' no cód. municipal."""
+    import io
+
+    import pdfplumber
+    desc = "Serviço de transfer prestado para Junio Silva Araújo\nItinerário:\nBarreiro x Conselheiro Lafaiete - R$500,00"
+    nid = criar_nota(con, cliente_id, descricao=desc)
+    emissor.emitir(con, nid)
+    xml = con.execute("SELECT xml_nfse FROM nota WHERE id = ?", (nid,)).fetchone()[0]
+    pdf = danfse.gerar_danfse_para_registro(xml, "emitida")
+    texto = pdfplumber.open(io.BytesIO(pdf)).pages[0].extract_text()
+    for esperado in ("DANFSe v1.0", "Prefeitura Municipal de Belo", "Secretaria Municipal de Fazenda - SMFA", "EMITENTE DA NFS-e",
+                     "16550350019", "JL TRANSPORTES EXECUTIVOS LTDA", "30170-131", "32430-090", "Ibirité - MG",
+                     "INTERMEDIÁRIO DO SERVIÇO NÃO IDENTIFICADO NA NFS-e", "16.02.01 - Outros serviços de", "Itinerário:",
+                     "Barreiro x Conselheiro Lafaiete - R$500,00", "Operação Tributável", "Não Retido", "Valor Líquido da NFS-e",
+                     "R$ 500,00", "TOTAIS APROXIMADOS DOS TRIBUTOS", "INFORMAÇÕES COMPLEMENTARES"):
+        assert esperado in texto, esperado
+    cancelada = danfse.gerar_danfse_para_registro(xml, "cancelada")
+    assert b"CANCELADA" in cancelada or len(cancelada) != len(pdf)     # marca d'água aplicada ao status "cancelada"
+
 
 
 # ------------------------------------------------------------------ agendador

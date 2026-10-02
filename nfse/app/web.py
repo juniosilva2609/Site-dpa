@@ -136,6 +136,10 @@ def primeiro_acesso():
     if g.con.execute("SELECT 1 FROM usuario LIMIT 1").fetchone():
         return redirect(url_for("login"))
     codigo = os.environ.get("NFSE_SETUP_CODE")
+    if not codigo and request.remote_addr not in ("127.0.0.1", "::1"):
+        # Sem código de instalação, só quem está na própria máquina cria o administrador: evita que o
+        # primeiro visitante de um servidor público tome conta do sistema.
+        abort(403, "Defina NFSE_SETUP_CODE (ou NFSE_ADMIN_SENHA) no ambiente do servidor para criar o administrador.")
     if request.method == "POST":
         f = request.form
         if codigo and not hmac.compare_digest(f.get("codigo", ""), codigo):

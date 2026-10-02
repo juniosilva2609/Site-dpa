@@ -16,7 +16,7 @@ from datetime import datetime
 from lxml import etree
 
 from . import alertas, conferencia, db, saida, util
-from .fiscal import api_nfse, assinatura, certificado, dps
+from .fiscal import api_nfse, assinatura, certificado, dps, xmlseguro
 
 _NS = {"n": "http://www.sped.fazenda.gov.br/nfse"}
 TRAVA = "emissao"
@@ -29,9 +29,9 @@ def dados_nfse(xml_texto: str) -> dict:
     """Extrai chave (50 dígitos), número, CNPJ do prestador e nDPS do XML oficial. Levanta ValueError se não
     parecer uma NFS-e autorizada."""
     try:
-        raiz = etree.fromstring(xml_texto.encode("utf-8"))
+        raiz = xmlseguro.parse(xml_texto)
     except etree.XMLSyntaxError as e:
-        raise ValueError(f"XML inválido: {e}") from e
+        raise ValueError(f"XML inválido: {e}") from e  # ValueError (DOCTYPE) já vem com mensagem própria
     inf = raiz if etree.QName(raiz).localname == "infNFSe" else raiz.find("n:infNFSe", namespaces=_NS)
     if inf is None:
         raise ValueError("O XML não tem o elemento infNFSe -- não parece uma NFS-e autorizada.")

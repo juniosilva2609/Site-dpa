@@ -3,6 +3,7 @@
 *.crt
 *.key
 *.pfx
+*.p12
 *.cer
 .env
 .env.*
