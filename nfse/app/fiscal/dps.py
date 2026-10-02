@@ -3,7 +3,9 @@ r"""Monta o XML da DPS (Declaração de Prestação de Serviço, versão 1.01, S
 evento de cancelamento. Regras aprendidas com rejeições REAIS da Sefin Nacional no sistema anterior
 (não repetir):
 
-- NÃO enviar <IM> do prestador (E0120) nem <xNome> do prestador com tpEmit=1 (E0121).
+- <xNome> do prestador não deve ir com tpEmit=1 (E0121).
+- <IM> depende do município: Ibirité rejeitava a IM (E0120); Belo Horizonte EXIGE (E0116, confirmado em
+  homologação). Por isso a IM só vai quando preenchida em Configuração -- deixe em branco onde não for aceita.
 - <regApTribSN>1 é obrigatório para optante do Simples (E0166).
 - dhEmi com fuso America/Sao_Paulo explícito (container roda em UTC -> E0008).
 - Nenhum prefixo de namespace em nada, inclusive no <Signature> (E1228).
@@ -81,6 +83,7 @@ def montar_dps_xml(nota: dict, cliente: dict, config: dict, numero_dps: int) -> 
 
     valor = nota["valor_centavos"] / 100
     c_trib_mun = (config.get("codigo_tributacao_municipal") or "").strip()
+    im = _digitos(config.get("inscricao_municipal"))
     fone = _digitos(config.get("telefone"))
     email = (config.get("email") or "").strip()
 
@@ -96,6 +99,7 @@ def montar_dps_xml(nota: dict, cliente: dict, config: dict, numero_dps: int) -> 
     <cLocEmi>{config["codigo_municipio_ibge"]}</cLocEmi>
     <prest>
       <CNPJ>{cnpj}</CNPJ>
+      {f"<IM>{escape(im)}</IM>" if im else ""}
       {f"<fone>{fone}</fone>" if fone else ""}
       {f"<email>{escape(email)}</email>" if email else ""}
       <regTrib>

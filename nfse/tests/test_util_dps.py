@@ -37,7 +37,7 @@ def test_tamanho_descricao_conta_espacos_repetidos_uma_vez():
 
 CFG = {"cnpj": "60441511000170", "codigo_municipio_ibge": "3106200", "serie_dps": "00001", "ambiente": "homologacao",
        "regime_tributario": "simples", "codigo_servico_lc116": "160201", "codigo_tributacao_municipal": "004",
-       "codigo_nbs": "", "aliquota_iss": None, "telefone": "31971254546", "email": "contato@jlexecutivo.com"}
+       "codigo_nbs": "", "aliquota_iss": None, "inscricao_municipal": "", "telefone": "31971254546", "email": "contato@jlexecutivo.com"}
 CLIENTE = {"nome": "DISTRIBUIDORA PERES & ARAUJO LTDA", "documento": CNPJ_CLIENTE, "logradouro": "ANTONIO GERMANO",
            "numero": "688", "bairro": "PALMARES", "cep": "32430090", "codigo_municipio": "3129806", "complemento": ""}
 NOTA = {"descricao": "Serviço <de> transfer & cia\nItinerário: A x B", "valor_centavos": 50000, "competencia": None}
@@ -53,7 +53,8 @@ def test_dps_xml_regras_aprendidas():
     raiz = etree.fromstring(xml)
     texto = xml.decode()
     assert raiz.tag == "{http://www.sped.fazenda.gov.br/nfse}DPS"
-    assert "<IM>" not in texto                                 # E0120
+    assert "<IM>" not in texto                                 # sem IM configurada: não envia (Ibirité, E0120)
+    assert "<IM>16550350019</IM>" in dps.montar_dps_xml(NOTA, CLIENTE, {**CFG, "inscricao_municipal": "16.550.350-019"}, 7)[0].decode()  # BH, E0116
     prest = raiz.find(".//{*}prest")
     assert prest.find("{*}xNome") is None                      # E0121
     assert "<regApTribSN>1</regApTribSN>" in texto             # E0166

@@ -144,7 +144,7 @@ _NS = {"n": "http://www.sped.fazenda.gov.br/nfse"}
 # SEMPRE que este arquivo mudar algo visível no PDF (layout, rótulo,
 # formatação) -- esquecer disso faz NFS-e já emitidas continuarem
 # mostrando o layout velho pra sempre, mesmo depois do deploy da correção.
-VERSAO_LAYOUT = 7
+VERSAO_LAYOUT = 8
 
 # ---------------------------------------------------------------------------
 # Fontes oficiais (item 2.4 da NT: Arial p/ títulos, Microsoft Sans Serif p/
@@ -720,7 +720,7 @@ def gerar_danfse_pdf(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
 
     r._titulo_bloco("SERVIÇO PRESTADO", ALTURA)
     r._campo(X2, LARG_COL, ALTURA, "Código de Tributação Nacional/Municipal",
-             f"{_fmt_trib_nac(_t(c_serv, 'cTribNac'))} / -")
+             f"{_fmt_trib_nac(_t(c_serv, 'cTribNac'))} / {_t(c_serv, 'cTribMun') or '-'}")
     r._campo(X3, LARG_COL, ALTURA, "Código da NBS", _fmt_nbs(_t(c_serv, "cNBS")))
     r._campo(X4, DIREITA - X4, ALTURA, "Local da Prestação / Sigla UF / País",
              f"{_t(inf_nfse, 'xLocPrestacao') or '-'} / {uf_emi} / -")
@@ -732,8 +732,14 @@ def gerar_danfse_pdf(xml_nfse: str, marca_dagua: str | None = None) -> bytes:
     # Texto inteiro, sempre, em quantas linhas precisar (a caixa cresce, item 2.3 da NT) -- nunca
     # corta. A emissão pelo sistema já barra descrição acima de 1297 caracteres (limite em que o
     # DANFSe do portal corta); nota registrada de fora com texto maior sai inteira mesmo assim.
-    descricao_servico = " ".join((_t(c_serv, "xDescServ") or "-").split())
-    linhas_desc = _quebrar(descricao_servico, _cm(LARG_TOTAL) - 6, _FONTE_CONTEUDO, 7)
+    # Mantém as quebras de linha digitadas (ex.: "Itinerário:" em linha própria, como na nota modelo);
+    # espaços repetidos dentro de cada linha valem um só.
+    linhas_desc = []
+    for bruta in (_t(c_serv, "xDescServ") or "-").splitlines() or ["-"]:
+        limpa = " ".join(bruta.split())
+        if limpa:
+            linhas_desc += _quebrar(limpa, _cm(LARG_TOTAL) - 6, _FONTE_CONTEUDO, 7)
+    linhas_desc = linhas_desc or ["-"]
     r._texto(X1, r.y + 0.02, "Descrição do Serviço", _FONTE_TITULO, 6, largura_cm=LARG_TOTAL)
     for k, linha_desc in enumerate(linhas_desc):
         r._texto(X1, r.y + 0.24 + k * 0.28, linha_desc, _FONTE_CONTEUDO, 7, largura_cm=LARG_TOTAL)

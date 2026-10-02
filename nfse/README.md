@@ -83,7 +83,6 @@ Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cr
 1. **Configuração → Certificado**: envie o .pfx; defina `NFSE_CERT_SENHA`. Clique *Testar conexão com a Sefin* e *Testar convênio do município*.
 2. Confira o cadastro do prestador e o código **16.02.01 / 004**; defina pasta e e-mails; *Testar gravação* e *E-mail de teste*.
 3. Em **homologação**, emita 1 nota avulsa (“Emitir agora”), abra o PDF e compare com o modelo da JL.
-   Se a Sefin rejeitar o `cTribMun` (004), deixe o campo em branco na Configuração e tente de novo.
 4. Passe para **produção** (digite `PRODUCAO`), emita **1 nota real de teste** e confira no Portal Nacional.
 5. Só então crie os agendamentos — comece **sem** aprovação automática.
 
@@ -99,12 +98,17 @@ pip install -r requirements-dev.txt && python -m pytest -q && ruff check .
 Cobrem DPS (Simples/normal, id, regras de rejeições reais), assinatura (válida e à prova de adulteração), agenda,
 conferências, emissão (sucesso, rejeição, falha ambígua, reenvio, anexar XML, cancelamento), agendador, entrega e telas.
 
-## O que ainda depende de você (não dá para testar sem o certificado real)
-* A comunicação real com a Sefin só pode ser validada com o seu e-CNPJ: os testes simulam a resposta. Por isso o
-  roteiro acima começa em homologação.
-* `GET /dps/{id}` e `GET /nfse/{chave}` (usados em *Conferir na Sefin*) ainda não foram exercitados em produção por este
-  sistema; se não funcionarem, o sistema avisa e mantém a nota em *Verificar* (use *Anexar XML*).
-* `cTribMun` (código municipal 004) é enviado porque consta na nota modelo da JL, mas o sistema anterior não o enviava;
-  confirme em homologação.
-* A tabela de cidades/UF e o motor do DANFSe (`app/fiscal/danfse.py`, fontes e logo) foram copiados sem alteração do
-  sistema anterior.
+## Validado contra a Sefin de homologação (com o e-CNPJ da JL)
+Conexão mTLS, assinatura, emissão (nota nº 1 de teste), `cTribMun` 004, consulta por DPS (`GET /dps/{id}`), download
+do XML (`GET /nfse/{chave}`), recusa de DPS repetida (E0014, base da proteção anti-duplicidade) e cancelamento.
+O PDF gerado foi conferido contra o modelo da JL.
+* **Belo Horizonte exige a Inscrição Municipal na DPS** (E0116); ela é enviada quando preenchida em Configuração
+  (em municípios que a proíbem, como Ibirité, deixe em branco).
+
+## O que ainda depende de você
+* Enviar o `.pfx` pela tela Configuração, definir `NFSE_CERT_SENHA` e passar para **produção** (digitando `PRODUCAO`).
+* Emitir **1 nota real de teste** e conferir no Portal Nacional antes de criar os agendamentos.
+* Configurar pasta de saída, e-mails e SMTP (não há credenciais de e-mail neste ambiente, então o envio por e-mail
+  só foi testado com simulação).
+* A tabela de cidades/UF e o motor do DANFSe (`app/fiscal/danfse.py`, fontes e logo) vieram do sistema anterior
+  (com dois ajustes: código municipal e quebras de linha da descrição, como na nota modelo).
