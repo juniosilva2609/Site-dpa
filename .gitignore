@@ -15,3 +15,10 @@ __pycache__/
 # banco/status/motivo, nunca segredo, mas não precisa ser versionado.
 logs/
 .pytest_cache/
+
+# Sistema de NFS-e (nfse/): dados de execução nunca vão para o git
+nfse/data/
+nfse/saida/
+*.db
+*.db-wal
+*.db-shm
