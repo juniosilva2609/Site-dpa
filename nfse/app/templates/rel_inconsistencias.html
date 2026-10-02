@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titulo %}Inconsistências · NFS-e JL{% endblock %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Inconsistências do sistema</h1>
+ <span class="acoes sem-impressao"><a class="botao claro pequeno" href="{{ url_for('rel_inconsistencias', formato='csv') }}">CSV</a>
+ <a class="botao claro pequeno" href="{{ url_for('rel_inconsistencias', formato='pdf') }}">PDF</a><button class="botao claro pequeno" data-imprimir>Imprimir</button></span></div>
+<p class="suave">Auditoria automática do banco: o sistema <b>não corrige nada sozinho</b>, só aponta o que merece conferência. Verificações: situação das notas, duplicidades, números pulados (DPS e NFS-e), arquivos e e-mails, cadastro, valores atípicos e agendamentos sem nota.</p>
+<section class="kpis">
+ <div class="kpi {{ 'alerta' if resumo.erro }}"><span class="rot">Erros</span><strong>{{ resumo.erro }}</strong><span class="suave">precisam de ação</span></div>
+ <div class="kpi {{ 'alerta' if resumo.aviso }}"><span class="rot">Atenção</span><strong>{{ resumo.aviso }}</strong><span class="suave">conferir</span></div>
+ <div class="kpi"><span class="rot">Informações</span><strong>{{ resumo.info }}</strong><span class="suave">sem ação</span></div></section>
+<div class="cartao">
+{% for a in achados %}<div class="achado {{ a.severidade }}">
+ <span class="badge {{ {'erro':'vermelho','aviso':'amarelo','info':'cinza'}[a.severidade] }}">{{ {'erro':'✖','aviso':'⚠','info':'ℹ'}[a.severidade] }} {{ a.severidade|severidade }}</span>
+ <div><b>{{ a.titulo }}</b>{% if a.detalhe %}<p>{{ a.detalhe }}</p>{% endif %}
+ {% if a.nota_id %}<a class="sem-impressao" href="{{ url_for('nota_detalhe', nid=a.nota_id) }}">Abrir nota #{{ a.nota_id }}</a>{% endif %}</div></div>
+{% else %}<p>✔ Nenhuma inconsistência encontrada. Tudo certo!</p>{% endfor %}
+</div>
+{% endblock %}

@@ -3,18 +3,22 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{% block titulo %}NFS-e Automática{% endblock %}</title>
+<title>{% block titulo %}NFS-e · JL Transportes{% endblock %}</title>
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
+<meta name="theme-color" content="#0b0a09">
 <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
-<body>
+<body class="{% block bodyclass %}{% endblock %}">
 {% if g.usuario %}
-<header class="topo">
-  <a class="marca" href="{{ url_for('painel') }}">NFS-e Automática</a>
+<header class="topo sem-impressao">
+  <a class="marca" href="{{ url_for('painel') }}"><img src="{{ url_for('static', filename='img/jl-mono.png') }}" alt="" width="40" height="35"><span>JL Transportes<small>NFS-e Automática</small></span></a>
   <nav>
-    <a href="{{ url_for('painel') }}">Painel</a>
+    <a href="{{ url_for('painel') }}">Início</a>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
     <a href="{{ url_for('notas') }}">Notas</a>
     <a href="{{ url_for('agendamentos') }}">Agendamentos</a>
     <a href="{{ url_for('clientes') }}">Clientes</a>
+    <a href="{{ url_for('relatorios_hub') }}">Relatórios</a>
     <a href="{{ url_for('sugestoes', de=request.path) }}">Sugestões</a>
     {% if g.usuario.admin %}<a href="{{ url_for('configuracao') }}">Configuração</a><a href="{{ url_for('usuarios') }}">Usuários</a>{% endif %}
   </nav>
@@ -31,6 +35,7 @@
 {% endwith %}
 {% block corpo %}{% endblock %}
 </main>
+<div id="dica" class="dica" role="tooltip" hidden></div>
 <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

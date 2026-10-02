@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_graficos.html" import filtros %}
+{% block titulo %}Notas emitidas · NFS-e JL{% endblock %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Relatório de notas emitidas</h1>
+ <span class="acoes sem-impressao">
+  <a class="botao claro pequeno" href="{{ url_for('rel_notas', formato='csv', situacao=situacao, **qs) }}">CSV (Excel)</a>
+  <a class="botao claro pequeno" href="{{ url_for('rel_notas', formato='pdf', situacao=situacao, **qs) }}">PDF</a>
+  <button class="botao claro pequeno" data-imprimir>Imprimir</button></span></div>
+<div class="sem-impressao">{{ filtros(f, presets, ambientes, clientes, url_for('rel_notas')) }}
+ <p class="filtros"><span class="suave">Mostrar:</span>
+  {% for k, v in [('emitida','Emitidas'),('cancelada','Canceladas'),('todas','Emitidas + canceladas')] %}<a class="chip {{ 'ativo' if situacao == k }}" href="{{ url_for('rel_notas', situacao=k, **qs) }}">{{ v }}</a>{% endfor %}</p></div>
+<div class="cartao"><table>
+<tr><th>Data</th><th>Nº</th><th>Cliente</th><th>Descrição</th><th class="num">Valor</th><th>Situação</th><th class="sem-impressao"></th></tr>
+{% for n in notas %}<tr><td>{{ (n.emitida_em or n.prevista_em)[:10]|data }}</td><td>{{ n.numero_nfse or '-' }}</td><td>{{ n.cliente }}<br><span class="suave">{{ n.cliente_doc|doc }}</span></td>
+<td class="desc">{{ n.descricao|truncate(90) }}</td><td class="num">{{ n.valor_centavos|valor }}</td>
+<td><span class="badge {{ n.status|status_css }}">{{ n.status|status_label }}</span>{% if n.ambiente == 'homologacao' %} <span class="badge cinza">teste</span>{% endif %}</td>
+<td class="sem-impressao"><a href="{{ url_for('nota_detalhe', nid=n.id) }}">abrir</a></td></tr>
+{% else %}<tr><td colspan="7" class="suave">Nenhuma nota no período.</td></tr>{% endfor %}
+{% if notas %}<tr class="total"><td colspan="4"><b>Total emitido ({{ notas|selectattr('status','equalto','emitida')|list|length }} nota(s))</b></td><td class="num"><b>{{ total|valor }}</b></td><td colspan="2"></td></tr>{% endif %}
+</table></div>
+{% endblock %}

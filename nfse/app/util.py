@@ -110,3 +110,30 @@ def fmt_data(texto: str | None) -> str:
         return datetime.fromisoformat(texto[:10]).strftime("%d/%m/%Y")
     except ValueError:
         return texto
+
+
+def fmt_reais(centavos: int | None) -> str:
+    """R$ 12.345 (sem centavos), para rótulos de gráfico."""
+    return "R$ " + f"{round((centavos or 0) / 100):,}".replace(",", ".")
+
+
+def fmt_compacto(centavos: int | None) -> str:
+    """R$ 1,2 mi / R$ 12,3 mil / R$ 950 (eixos e centro de rosca)."""
+    v = (centavos or 0) / 100
+    if v >= 1_000_000:
+        return f"R$ {v / 1_000_000:.1f} mi".replace(".", ",")
+    if v >= 10_000:
+        return f"R$ {v / 1000:.0f} mil"
+    if v >= 1_000:
+        return f"R$ {v / 1000:.1f} mil".replace(".", ",")
+    return f"R$ {v:.0f}"
+
+
+def fmt_pct(p: float | None) -> str:
+    return "-" if p is None else f"{p:.1f}".replace(".", ",") + "%"
+
+
+def mes_curto(ym: str) -> str:
+    """'2026-03' -> 'mar/26'"""
+    nomes = ["jan", "fev", "mar", "abr", "mai", "jun", "jul", "ago", "set", "out", "nov", "dez"]
+    return f"{nomes[int(ym[5:7]) - 1]}/{ym[2:4]}"

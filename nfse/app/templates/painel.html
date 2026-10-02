@@ -2,7 +2,14 @@
 {% from "_macros.html" import badge, lista_conferencia %}
 {% block corpo %}
 {% if cfg.ambiente != 'producao' %}<div class="faixa teste">AMBIENTE DE TESTE (homologação): as notas emitidas aqui NÃO têm validade jurídica.</div>{% endif %}
-<h1>Painel</h1>
+<h1>Início</h1>
+<section class="kpis resumo-mes">
+ <a class="kpi heroi link" href="{{ url_for('dashboard', periodo='mes') }}"><span class="rot">Faturamento neste mês</span><strong class="hero">{{ mes.total|valor }}</strong>
+  {% if mes.variacao is not none %}<span class="delta {{ 'bom' if mes.variacao >= 0 else 'ruim' }}">{{ '▲' if mes.variacao >= 0 else '▼' }} {{ mes.variacao|abs|pct }} <span class="suave">vs mês anterior</span></span>{% else %}<span class="suave">{{ mes.qtd }} nota(s) emitida(s)</span>{% endif %}</a>
+ <div class="kpi"><span class="rot">Notas emitidas no mês</span><strong>{{ mes.qtd }}</strong><span class="suave">ticket médio {{ mes.ticket|valor }}</span></div>
+ <a class="kpi link {{ 'alerta' if atencao }}" href="#atencao"><span class="rot">Precisam de atenção</span><strong>{{ atencao|length }}</strong><span class="suave">a conferir ou com problema</span></a>
+</section>
+<p class="acoes atalhos"><a class="botao" href="{{ url_for('nota_nova') }}">+ Nova nota avulsa</a><a class="botao claro" href="{{ url_for('agendamento_novo') }}">+ Novo agendamento</a><a class="botao claro" href="{{ url_for('dashboard') }}">📊 Dashboard</a><a class="botao claro" href="{{ url_for('relatorios_hub') }}">🧾 Relatórios</a></p>
 
 {% if agendador_parado %}<div class="aviso erro">O agendador não deu sinal nos últimos minutos{% if ultimo_ciclo %} (último: {{ ultimo_ciclo }}){% endif %}. As notas agendadas <b>não serão emitidas</b> até ele voltar. Reinicie o serviço.</div>{% endif %}
 
@@ -12,7 +19,7 @@
 <div class="cartao"><h2>Configuração</h2>{{ lista_conferencia(problemas_config) }}<a href="{{ url_for('configuracao') }}">Ir para Configuração</a></div>
 {% endif %}
 
-<div class="cartao"><h2>Precisam da sua atenção ({{ atencao|length }})</h2>
+<div class="cartao" id="atencao"><h2>Precisam da sua atenção ({{ atencao|length }})</h2>
 {% if atencao %}<table><tr><th>Quando</th><th>Cliente</th><th>Valor</th><th>Situação</th><th></th></tr>
 {% for n in atencao %}<tr><td>{{ n.prevista_em|dt }}</td><td>{{ n.cliente }}</td><td>{{ n.valor_centavos|valor }}</td><td>{{ badge(n.status) }}</td><td><a class="botao pequeno" href="{{ url_for('nota_detalhe', nid=n.id) }}">{{ 'Conferir' if n.status == 'a_conferir' else 'Ver' }}</a></td></tr>{% endfor %}</table>
 {% else %}<p class="suave">Nada pendente. 👍</p>{% endif %}</div>

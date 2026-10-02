@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block titulo %}Relatórios · NFS-e JL{% endblock %}
+{% block corpo %}
+<h1>Relatórios</h1>
+<p class="suave">Todos podem ser filtrados por período, cliente e ambiente, e exportados em <b>PDF</b> ou <b>CSV (Excel)</b>.</p>
+<div class="cards">
+ <a class="cartao card-rel" href="{{ url_for('dashboard') }}"><h2>📊 Dashboard</h2><p>Visão geral com gráficos: faturamento por mês, por cliente, situação das notas e indicadores.</p></a>
+ <a class="cartao card-rel" href="{{ url_for('rel_notas') }}"><h2>🧾 Notas emitidas</h2><p>Lista completa das NFS-e (nº, cliente, valor, chave de acesso). Ideal para o contador.</p></a>
+ <a class="cartao card-rel" href="{{ url_for('rel_faturamento') }}"><h2>💰 Faturamento</h2><p>Totais por mês e por cliente, ticket médio, variações e participação de cada cliente.</p></a>
+ <a class="cartao card-rel" href="{{ url_for('rel_inconsistencias') }}"><h2>🔎 Inconsistências</h2><p>Auditoria: números pulados, notas possivelmente duplicadas, pendências, arquivos que faltam e mais.</p></a>
+</div>
+{% endblock %}

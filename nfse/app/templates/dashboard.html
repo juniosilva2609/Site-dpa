@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+{% from "_graficos.html" import legenda, filtros %}
+{% block titulo %}Dashboard · NFS-e JL{% endblock %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Dashboard</h1>
+ <span class="acoes"><a class="botao claro pequeno" href="{{ url_for('relatorios_hub') }}">Relatórios</a>
+ <a class="botao claro pequeno" href="{{ url_for('rel_faturamento', **qs) }}">Faturamento detalhado</a></span></div>
+{% if cfg.ambiente != 'producao' %}<div class="faixa teste">AMBIENTE DE TESTE (homologação): as notas emitidas aqui não têm validade jurídica e não representam faturamento real.</div>{% endif %}
+{{ filtros(f, presets, ambientes, clientes, url_for('dashboard')) }}
+
+<section class="kpis" aria-label="Indicadores">
+ <div class="kpi heroi"><span class="rot">Faturamento no período</span>
+  <strong class="hero">{{ fat.total|valor }}</strong>
+  {% if fat.variacao is not none %}<span class="delta {{ 'bom' if fat.variacao >= 0 else 'ruim' }}">{{ '▲' if fat.variacao >= 0 else '▼' }} {{ fat.variacao|abs|pct }} <span class="suave">vs período anterior ({{ fat.anterior|valor }})</span></span>
+  {% else %}<span class="suave">sem período anterior para comparar</span>{% endif %}</div>
+ <div class="kpi"><span class="rot">Notas emitidas</span><strong>{{ fat.qtd }}</strong><span class="suave">{% if fat.cancelado_qtd %}{{ fat.cancelado_qtd }} cancelada(s): {{ fat.cancelado_valor|valor }}{% else %}nenhuma cancelada{% endif %}</span></div>
+ <div class="kpi"><span class="rot">Ticket médio</span><strong>{{ fat.ticket|valor }}</strong><span class="suave">{% if fat.maior %}maior nota: {{ fat.maior.valor_centavos|valor }}{% else %}-{% endif %}</span></div>
+ <div class="kpi"><span class="rot">Clientes atendidos</span><strong>{{ fat.n_clientes }}</strong><span class="suave">no período</span></div>
+ <a class="kpi link {{ 'alerta' if pendentes else '' }}" href="{{ url_for('painel') }}"><span class="rot">Precisam de atenção</span><strong>{{ pendentes }}</strong><span class="suave">notas a conferir ou com problema</span></a>
+ <a class="kpi link {{ 'alerta' if resumo.erro or resumo.aviso else '' }}" href="{{ url_for('rel_inconsistencias') }}"><span class="rot">Inconsistências</span><strong>{{ resumo.erro + resumo.aviso }}</strong>
+  <span class="suave">{{ resumo.erro }} erro(s) · {{ resumo.aviso }} atenção</span></a>
+</section>
+
+<section class="cartao"><h2>Faturamento por mês</h2>
+ {{ graf.colunas|safe }}
+ <details class="tabela-alt"><summary>Ver como tabela</summary>
+ <table><tr><th>Mês</th><th class="num">Notas</th><th class="num">Valor</th></tr>
+ {% for m in fat.mensal %}<tr><td>{{ m.mes|mes_curto }}</td><td class="num">{{ m.qtd }}</td><td class="num">{{ m.valor|valor }}</td></tr>{% endfor %}</table></details>
+</section>
+
+<div class="duas">
+ <section class="cartao"><h2>Faturamento por cliente</h2>
+  <div class="rosca-bloco">{{ graf.clientes|safe }}<div>{{ legenda(fat.clientes, cl_cls) }}</div></div></section>
+ <section class="cartao"><h2>Por agendamento (emissão padrão) e avulsas</h2>
+  <div class="rosca-bloco">{{ graf.agend|safe }}<div>{{ legenda(fat.agendamentos, ag_cls) }}</div></div></section>
+</div>
+
+<div class="duas">
+ <section class="cartao"><h2>Situação das notas</h2>
+  <div class="rosca-bloco">{{ graf.situacao|safe }}
+   <table class="legenda"><tbody>
+   {% for x in sit %}<tr><td><span class="dot {{ sit_cls[loop.index0] }}"></span></td>
+    <td><span aria-hidden="true">{{ ['✔','⏳','⚠','⊘'][loop.index0] }}</span> {{ x.rotulo }}</td><td class="num">{{ x.qtd }}</td><td class="num suave">{{ x.pct|pct }}</td></tr>{% endfor %}
+   </tbody></table></div>
+  <p class="suave">Notas previstas no período, por situação atual.</p></section>
+ <section class="cartao"><h2>Ranking de clientes</h2>
+  <table><tr><th>Cliente</th><th class="num">Notas</th><th class="num">Valor</th><th class="num">%</th></tr>
+  {% for r in fat.ranking[:8] %}<tr><td>{{ r.cliente }}</td><td class="num">{{ r.qtd }}</td><td class="num">{{ r.valor|valor }}</td><td class="num">{{ r.pct|pct }}</td></tr>
+  {% else %}<tr><td colspan="4" class="suave">Sem notas emitidas no período.</td></tr>{% endfor %}</table>
+  {% if fat.ranking|length > 8 %}<p class="suave"><a href="{{ url_for('rel_faturamento', **qs) }}">Ver todos os {{ fat.ranking|length }} clientes</a></p>{% endif %}</section>
+</div>
+{% endblock %}

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% from "_graficos.html" import legenda, filtros %}
+{% block titulo %}Faturamento · NFS-e JL{% endblock %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Relatório de faturamento</h1>
+ <span class="acoes sem-impressao">
+  <a class="botao claro pequeno" href="{{ url_for('rel_faturamento', formato='csv', tabela='mensal', **qs) }}">CSV por mês</a>
+  <a class="botao claro pequeno" href="{{ url_for('rel_faturamento', formato='csv', tabela='cliente', **qs) }}">CSV por cliente</a>
+  <a class="botao claro pequeno" href="{{ url_for('rel_faturamento', formato='pdf', **qs) }}">PDF</a>
+  <button class="botao claro pequeno" data-imprimir>Imprimir</button></span></div>
+<div class="sem-impressao">{{ filtros(f, presets, ambientes, clientes, url_for('rel_faturamento')) }}</div>
+<section class="kpis">
+ <div class="kpi heroi"><span class="rot">Faturamento</span><strong class="hero">{{ fat.total|valor }}</strong>
+  {% if fat.variacao is not none %}<span class="delta {{ 'bom' if fat.variacao >= 0 else 'ruim' }}">{{ '▲' if fat.variacao >= 0 else '▼' }} {{ fat.variacao|abs|pct }} <span class="suave">vs período anterior</span></span>{% endif %}</div>
+ <div class="kpi"><span class="rot">Notas</span><strong>{{ fat.qtd }}</strong></div>
+ <div class="kpi"><span class="rot">Ticket médio</span><strong>{{ fat.ticket|valor }}</strong></div>
+ <div class="kpi"><span class="rot">Canceladas</span><strong>{{ fat.cancelado_valor|valor }}</strong><span class="suave">{{ fat.cancelado_qtd }} nota(s)</span></div>
+</section>
+<section class="cartao"><h2>Por mês</h2>{{ graf.colunas|safe }}
+<table><tr><th>Mês</th><th class="num">Notas</th><th class="num">Valor</th><th class="num">Ticket médio</th><th class="num">Variação</th></tr>
+{% for m in mensal %}<tr><td>{{ m.mes|mes_curto }}</td><td class="num">{{ m.qtd }}</td><td class="num">{{ m.valor|valor }}</td><td class="num">{{ m.ticket|valor }}</td>
+<td class="num">{% if m.variacao is not none %}<span class="{{ 'bom' if m.variacao >= 0 else 'ruim' }}">{{ '▲' if m.variacao >= 0 else '▼' }} {{ m.variacao|abs|pct }}</span>{% else %}-{% endif %}</td></tr>{% endfor %}</table></section>
+<div class="duas">
+<section class="cartao"><h2>Por cliente</h2><div class="rosca-bloco">{{ graf.clientes|safe }}<div>{{ legenda(fat.clientes, cl_cls) }}</div></div></section>
+<section class="cartao"><h2>Ranking completo</h2><table><tr><th>Cliente</th><th class="num">Notas</th><th class="num">Valor</th><th class="num">Ticket</th><th class="num">%</th></tr>
+{% for r in fat.ranking %}<tr><td>{{ r.cliente }}</td><td class="num">{{ r.qtd }}</td><td class="num">{{ r.valor|valor }}</td><td class="num">{{ r.ticket|valor }}</td><td class="num">{{ r.pct|pct }}</td></tr>
+{% else %}<tr><td colspan="5" class="suave">Sem notas emitidas no período.</td></tr>{% endfor %}</table></section>
+</div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{# Legenda de rosca: bolinha colorida (identidade) + texto em tinta normal (nunca na cor da série) #}
+{% macro legenda(fatias, classes, formato='valor') %}
+<table class="legenda"><tbody>
+{% for x in fatias %}<tr>
+  <td><span class="dot {{ classes[loop.index0] }}"></span></td>
+  <td>{{ x.rotulo }}{% if x.n_outros %} <span class="suave">({{ x.n_outros }})</span>{% endif %}</td>
+  <td class="num">{% if formato == 'qtd' %}{{ x.qtd }}{% else %}{{ x.valor|valor }}{% endif %}</td>
+  <td class="num suave">{{ x.pct|pct }}</td></tr>
+{% else %}<tr><td colspan="4" class="suave">Sem dados no período.</td></tr>{% endfor %}
+</tbody></table>
+{% endmacro %}
+
+{% macro filtros(f, presets, ambientes, clientes, acao) %}
+<form method="get" action="{{ acao }}" class="filtros barra">
+  <label>Período <select name="periodo">{% for k, v in presets.items() %}<option value="{{ k }}" {{ 'selected' if f.preset == k }}>{{ v }}</option>{% endfor %}</select></label>
+  <label>De <input type="date" name="de" value="{{ f.de }}"></label>
+  <label>Até <input type="date" name="ate" value="{{ f.ate }}"></label>
+  <label>Dados <select name="ambiente">{% for k, v in ambientes.items() %}<option value="{{ k }}" {{ 'selected' if f.ambiente == k }}>{{ v }}</option>{% endfor %}</select></label>
+  <label>Cliente <select name="cliente"><option value="">Todos</option>{% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if f.cliente_id == c.id }}>{{ c.nome }}</option>{% endfor %}</select></label>
+  <button class="botao pequeno">Aplicar</button>
+</form>
+<p class="suave periodo">{{ f.rotulo }} · {{ ambientes[f.ambiente] }}{% if f.preset == 'custom' %} · use "De/Até"{% endif %}</p>
+{% endmacro %}

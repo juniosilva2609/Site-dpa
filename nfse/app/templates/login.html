@@ -1,10 +1,16 @@
 {% extends "base.html" %}
+{% block bodyclass %}login{% endblock %}
+{% block titulo %}Entrar · NFS-e JL Transportes{% endblock %}
 {% block corpo %}
-<div class="cartao estreito"><h1>Entrar</h1>
-<form method="post">
+<div class="login-caixa">
+ <img class="login-logo" src="{{ url_for('static', filename='img/jl-logo.webp') }}" alt="JL Transportes Executivos Ltda" width="1000" height="698">
+ <div class="cartao login-cartao"><h1>Emissão de NFS-e</h1>
+ <form method="post">
   <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
   <label>Usuário <input name="login" autocomplete="username" required autofocus></label>
   <label>Senha <input type="password" name="senha" autocomplete="current-password" required></label>
   <button class="botao grande">Entrar</button>
-</form></div>
+ </form></div>
+ <p class="login-rodape">JL Transportes Executivos Ltda · CNPJ 60.441.511/0001-70</p>
+</div>
 {% endblock %}

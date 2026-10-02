@@ -47,6 +47,20 @@ As mesmas conferências rodam **de novo no instante da emissão**.
 * Se o programa cair no meio de uma emissão, a nota fica em **Verificar** (nunca volta sozinha para a fila).
 * Falha de pasta/e-mail **nunca** muda o estado fiscal da nota; a rotina tenta de novo e alerta.
 
+## Início, Dashboard e Relatórios
+* **Início:** resumo do mês (faturamento e variação), atalhos, o que precisa de atenção, próximas emissões e últimas notas.
+* **Dashboard** (menu Dashboard): filtros de período (mês, trimestre, ano, 12 meses, personalizado), dados (produção/teste) e
+  cliente. Indicadores (faturamento com variação vs período anterior, notas, ticket médio, clientes, pendências,
+  inconsistências), **colunas** de faturamento por mês, **roscas** (pizza) de faturamento por cliente, por agendamento/avulsas
+  e situação das notas, e ranking de clientes. Gráficos em SVG próprio, com dica ao passar o mouse e legenda/tabela com os valores.
+* **Relatórios** (PDF e CSV para Excel, ou imprimir): *Notas emitidas* (para o contador), *Faturamento* (por mês e por
+  cliente) e *Inconsistências*. Faturamento conta só notas emitidas (cancelada aparece à parte) pela data de emissão;
+  notas de teste só entram se você escolher "Testes" ou "Todos".
+* **Auditoria de inconsistências** (nada é corrigido sozinho): número de NFS-e e de DPS pulados, número de NFS-e repetido,
+  notas possivelmente duplicadas (mesmo dia = erro; < 7 dias = atenção; cobrança mensal recorrente não alerta), notas em
+  "Verificar"/atrasadas/presas, arquivos ou e-mails não entregues, arquivo sumido da pasta, cliente com CPF/CNPJ inválido,
+  valor muito acima do habitual e agendamento mensal sem nota num mês.
+
 ## Sugestões e inconsistências
 Menu **Sugestões** (e o link "Reportar problema nesta nota"): qualquer usuário escreve uma sugestão ou relata uma
 inconsistência; fica registrada no sistema e **chega por e-mail em junioaraujo.adv@gmail.com** (troque com

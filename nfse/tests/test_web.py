@@ -30,7 +30,7 @@ def admin(client):
     r = post(client, "/primeiro-acesso", {"nome": "Junio", "login": "junio", "senha": "senha-forte-1", "senha2": "senha-forte-1"})
     assert r.status_code == 200
     r = post(client, "/entrar", {"login": "junio", "senha": "senha-forte-1"})
-    assert "Painel" in r.get_data(as_text=True)
+    assert "Precisam da sua atenção" in r.get_data(as_text=True)
     return client
 
 

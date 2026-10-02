@@ -14,7 +14,8 @@ from functools import wraps
 from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request, send_file, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import agenda, alertas, conferencia, db, emissor, feedback, municipios, saida, util
+from . import (agenda, alertas, auditoria, conferencia, db, emissor, exportar, feedback, graficos, municipios, relatorios, saida,
+               util)
 from .fiscal import api_nfse, certificado, danfse
 from .fiscal.dps import MOTIVOS_CANCELAMENTO
 
@@ -32,7 +33,8 @@ def registrar(app: Flask) -> None:
     app.jinja_env.filters.update(
         valor=util.fmt_valor, dt=util.fmt_data_hora, data=util.fmt_data, doc=util.fmt_documento,
         status_label=lambda s: STATUS.get(s, (s, "cinza"))[0], status_css=lambda s: STATUS.get(s, (s, "cinza"))[1],
-        cidade=municipios.rotulo)
+        cidade=municipios.rotulo, pct=util.fmt_pct, compacto=util.fmt_compacto, mes_curto=util.mes_curto,
+        severidade=lambda x: auditoria.SEVERIDADES.get(x, x))
     app.jinja_env.globals.update(STATUS=STATUS, csrf_token=_csrf_token, agora=util.agora)
 
     @app.before_request
@@ -223,7 +225,10 @@ def painel():
     if tick:
         parado = datetime.now() - datetime.fromisoformat(tick["valor"]) > timedelta(minutes=3)
     dias_cert = certificado.dias_para_vencer() if certificado.disponivel() else None
-    return render_template("painel.html", cfg=cfg, atencao=atencao, proximas=proximas, recentes=recentes,
+    hoje = util.agora().date()
+    ini_m, fim_m, _, _ = relatorios.periodo("mes", hoje=hoje)
+    mes = relatorios.faturamento(g.con, ini_m, fim_m, cfg["ambiente"])
+    return render_template("painel.html", cfg=cfg, mes=mes, atencao=atencao, proximas=proximas, recentes=recentes,
                            alertas=alertas.abertos(con), agendador_parado=parado, dias_cert=dias_cert,
                            cert_ok=certificado.disponivel(), problemas_config=conferencia.conferir_configuracao(cfg),
                            ultimo_ciclo=tick["valor"] if tick else None)
@@ -544,6 +549,133 @@ def sugestoes():
                            f=request.form if request.method == "POST" else {})
 
 
+# ------------------------------------------------------------------------------------- dashboard e relatórios
+def _filtros() -> dict:
+    a = request.args
+    ini, fim, rotulo, preset = relatorios.periodo(a.get("periodo"), a.get("de"), a.get("ate"))
+    cliente = a.get("cliente", "")
+    return {"preset": preset, "de": ini.isoformat() if preset == "custom" else a.get("de", ""),
+            "ate": fim.isoformat() if preset == "custom" else a.get("ate", ""), "ini": ini, "fim": fim, "rotulo": rotulo,
+            "ambiente": relatorios.ambiente_padrao(g.con, a.get("ambiente")),
+            "cliente_id": int(cliente) if cliente.isdigit() else None}
+
+
+def _contexto_filtros(f: dict) -> dict:
+    return {"f": f, "presets": relatorios.PRESETS, "ambientes": relatorios.AMBIENTES,
+            "clientes": relatorios.clientes_do_filtro(g.con),
+            "qs": {"periodo": f["preset"], "de": f["de"], "ate": f["ate"], "ambiente": f["ambiente"],
+                   "cliente": f["cliente_id"] or ""}}
+
+
+def dashboard():
+    f = _filtros()
+    fat = relatorios.faturamento(g.con, f["ini"], f["fim"], f["ambiente"], f["cliente_id"])
+    sit = relatorios.situacao_notas(g.con, f["ini"], f["fim"], f["ambiente"])
+    achados = auditoria.auditar(g.con)
+    cl = fat["clientes"]
+    ag = fat["agendamentos"]
+    estilo_sit = ["st-ok", "st-wait", "st-bad", "so"]
+    graf = {
+        "colunas": graficos.colunas(fat["mensal"]),
+        "clientes": graficos.rosca(cl, graficos.classes_cores(cl), "Total", util.fmt_reais(fat["total"]), "Faturamento por cliente"),
+        "agend": graficos.rosca(ag, graficos.classes_cores(ag), "Total", util.fmt_reais(fat["total"]), "Faturamento por agendamento"),
+        "situacao": graficos.rosca(sit, estilo_sit, "Notas", str(sum(x["qtd"] for x in sit)), "Situação das notas",
+                                   valor_fmt=lambda q: f"{q} nota(s)", chave_valor="qtd"),
+    }
+    return render_template("dashboard.html", fat=fat, sit=sit, graf=graf, cl_cls=graficos.classes_cores(cl),
+                           ag_cls=graficos.classes_cores(ag), sit_cls=estilo_sit, resumo=auditoria.resumo(achados),
+                           pendentes=g.con.execute("SELECT COUNT(*) FROM nota WHERE status IN ('a_conferir','atrasada','rejeitada','verificar')").fetchone()[0],
+                           cfg=db.obter_config(g.con), **_contexto_filtros(f))
+
+
+def relatorios_hub():
+    return render_template("relatorios.html")
+
+
+def _baixar(dados: bytes, nome: str, mimetype: str):
+    return send_file(io.BytesIO(dados), mimetype=mimetype, as_attachment=True, download_name=nome)
+
+
+def _nome_rel(base: str, f: dict, ext: str) -> str:
+    periodo = "todo o periodo" if f["preset"] == "tudo" else f"{f['ini']:%Y%m%d}-{f['fim']:%Y%m%d}"
+    return f"{base} {periodo}.{ext}"
+
+
+def rel_notas():
+    f = _filtros()
+    sit = request.args.get("situacao", "emitida")
+    status = {"emitida": ("emitida",), "cancelada": ("cancelada",), "todas": ("emitida", "cancelada")}.get(sit, ("emitida",))
+    notas = relatorios.notas_emitidas(g.con, f["ini"], f["fim"], f["ambiente"], f["cliente_id"], status)
+    total = sum(n["valor_centavos"] for n in notas if n["status"] == "emitida")
+    cab = ["Data emissão", "Nº NFS-e", "Cliente", "CPF/CNPJ", "Descrição", "Valor (R$)", "Situação", "Ambiente", "Chave de acesso"]
+    linhas = [[util.fmt_data((n["emitida_em"] or n["prevista_em"])[:10]), n["numero_nfse"] or "", n["cliente"], util.fmt_documento(n["cliente_doc"]),
+               " ".join((n["descricao"] or "").split()), exportar.reais(n["valor_centavos"]), STATUS[n["status"]][0],
+               "Teste" if n["ambiente"] == "homologacao" else "Produção", n["chave_acesso"] or ""] for n in notas]
+    formato = request.args.get("formato")
+    if formato == "csv":
+        return _baixar(exportar.csv_bytes(cab, linhas), _nome_rel("Notas emitidas", f, "csv"), "text/csv; charset=utf-8")
+    if formato == "pdf":
+        pdf = exportar.pdf_relatorio("Notas emitidas", f"{f['rotulo']} · {relatorios.AMBIENTES[f['ambiente']]}",
+                                     [("Notas", str(len(notas))), ("Valor total emitido", util.fmt_valor(total))],
+                                     [{"titulo": "Notas", "cabecalho": ["Data", "Nº", "Cliente", "Descrição", "Valor (R$)", "Situação"],
+                                       "linhas": [[ln[0], ln[1], ln[2], ln[4][:90], ln[5], ln[6]] for ln in linhas], "larguras": [20, 14, 55, 110, 24, 24], "direita": [4]}],
+                                     paisagem=True)
+        return _baixar(pdf, _nome_rel("Notas emitidas", f, "pdf"), "application/pdf")
+    return render_template("rel_notas.html", notas=notas, total=total, situacao=sit, **_contexto_filtros(f))
+
+
+def rel_faturamento():
+    f = _filtros()
+    fat = relatorios.faturamento(g.con, f["ini"], f["fim"], f["ambiente"], f["cliente_id"])
+    mensal = []
+    anterior = None
+    for m in fat["mensal"]:
+        var = (m["valor"] - anterior) * 100 / anterior if anterior and m["valor"] else None
+        mensal.append({**m, "variacao": var, "ticket": m["valor"] // m["qtd"] if m["qtd"] else 0})
+        anterior = m["valor"]
+    formato = request.args.get("formato")
+    if formato == "csv":
+        if request.args.get("tabela") == "cliente":
+            cab = ["Cliente", "Notas", "Valor (R$)", "Ticket médio (R$)", "% do total"]
+            linhas = [[r["cliente"], r["qtd"], exportar.reais(r["valor"]), exportar.reais(r["ticket"]), f"{r['pct']:.1f}".replace(".", ",")] for r in fat["ranking"]]
+            nome = "Faturamento por cliente"
+        else:
+            cab = ["Mês", "Notas", "Valor (R$)", "Ticket médio (R$)", "Variação vs mês anterior (%)"]
+            linhas = [[m["mes"][5:7] + "/" + m["mes"][:4], m["qtd"], exportar.reais(m["valor"]), exportar.reais(m["ticket"]),
+                       "" if m["variacao"] is None else f"{m['variacao']:.1f}".replace(".", ",")] for m in mensal]
+            nome = "Faturamento por mês"
+        return _baixar(exportar.csv_bytes(cab, linhas), _nome_rel(nome, f, "csv"), "text/csv; charset=utf-8")
+    if formato == "pdf":
+        kpis = [("Faturamento", util.fmt_valor(fat["total"])), ("Notas emitidas", str(fat["qtd"])), ("Ticket médio", util.fmt_valor(fat["ticket"])),
+                ("Clientes atendidos", str(fat["n_clientes"])), ("Canceladas", util.fmt_valor(fat["cancelado_valor"]))]
+        pdf = exportar.pdf_relatorio("Relatório de faturamento", f"{f['rotulo']} · {relatorios.AMBIENTES[f['ambiente']]}", kpis, [
+            {"titulo": "Faturamento por mês", "cabecalho": ["Mês", "Notas", "Valor", "Ticket médio", "Variação"],
+             "linhas": [[m["mes"][5:7] + "/" + m["mes"][:4], m["qtd"], util.fmt_valor(m["valor"]), util.fmt_valor(m["ticket"]), util.fmt_pct(m["variacao"])] for m in mensal],
+             "larguras": [30, 22, 38, 38, 30], "direita": [1, 2, 3, 4]},
+            {"titulo": "Faturamento por cliente", "cabecalho": ["Cliente", "Notas", "Valor", "Ticket médio", "% do total"],
+             "linhas": [[r["cliente"], r["qtd"], util.fmt_valor(r["valor"]), util.fmt_valor(r["ticket"]), util.fmt_pct(r["pct"])] for r in fat["ranking"]],
+             "larguras": [64, 18, 34, 34, 24], "direita": [1, 2, 3, 4]}])
+        return _baixar(pdf, _nome_rel("Relatório de faturamento", f, "pdf"), "application/pdf")
+    cl = fat["clientes"]
+    graf = {"colunas": graficos.colunas(fat["mensal"]),
+            "clientes": graficos.rosca(cl, graficos.classes_cores(cl), "Total", util.fmt_reais(fat["total"]), "Faturamento por cliente")}
+    return render_template("rel_faturamento.html", fat=fat, mensal=mensal, graf=graf, cl_cls=graficos.classes_cores(cl), **_contexto_filtros(f))
+
+
+def rel_inconsistencias():
+    achados = auditoria.auditar(g.con)
+    formato = request.args.get("formato")
+    if formato in ("csv", "pdf"):
+        linhas = [[auditoria.SEVERIDADES[a["severidade"]], a["titulo"], a["detalhe"], f"#{a['nota_id']}" if a["nota_id"] else ""] for a in achados]
+        if formato == "csv":
+            return _baixar(exportar.csv_bytes(["Gravidade", "Inconsistência", "Detalhe", "Nota"], linhas), "Inconsistencias.csv", "text/csv; charset=utf-8")
+        res = auditoria.resumo(achados)
+        pdf = exportar.pdf_relatorio("Inconsistências", "Auditoria do sistema", [("Erros", str(res["erro"])), ("Atenção", str(res["aviso"])), ("Informações", str(res["info"]))],
+                                     [{"titulo": "Achados", "cabecalho": ["Gravidade", "Inconsistência", "Detalhe", "Nota"], "linhas": linhas, "larguras": [20, 55, 90, 15]}])
+        return _baixar(pdf, "Inconsistencias.pdf", "application/pdf")
+    return render_template("rel_inconsistencias.html", achados=achados, resumo=auditoria.resumo(achados))
+
+
 # ------------------------------------------------------------------------------------- configuração
 @admin_requerido
 def configuracao():
@@ -674,6 +806,9 @@ _ROTAS = [
     ("/agendamentos", "agendamentos", agendamentos, _G), ("/agendamentos/novo", "agendamento_novo", agendamento_form, _GP),
     ("/agendamentos/gerar", "agendamentos_gerar", agendamentos_gerar, _P),
     ("/agendamentos/<int:aid>", "agendamento_editar", agendamento_form, _GP),
+    ("/dashboard", "dashboard", dashboard, _G), ("/relatorios", "relatorios_hub", relatorios_hub, _G),
+    ("/relatorios/notas", "rel_notas", rel_notas, _G), ("/relatorios/faturamento", "rel_faturamento", rel_faturamento, _G),
+    ("/relatorios/inconsistencias", "rel_inconsistencias", rel_inconsistencias, _G),
     ("/sugestoes", "sugestoes", sugestoes, _GP),
     ("/configuracao", "configuracao", configuracao, _GP),
 ]
