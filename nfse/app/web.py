@@ -14,7 +14,7 @@ from functools import wraps
 from flask import (Flask, abort, flash, g, jsonify, redirect, render_template, request, send_file, session, url_for)
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from . import agenda, alertas, conferencia, db, emissor, municipios, saida, util
+from . import agenda, alertas, conferencia, db, emissor, feedback, municipios, saida, util
 from .fiscal import api_nfse, certificado, danfse
 from .fiscal.dps import MOTIVOS_CANCELAMENTO
 
@@ -511,6 +511,39 @@ def agendamentos_gerar():
     return redirect(url_for("agendamentos"))
 
 
+# ------------------------------------------------------------------------------------- sugestões
+def sugestoes():
+    if request.method == "POST":
+        f = request.form
+        if f.get("acao") == "resolver" and g.usuario["admin"]:
+            g.con.execute("UPDATE feedback SET resolvido_em = CASE WHEN resolvido_em IS NULL THEN datetime('now','localtime') "
+                          "ELSE NULL END WHERE id = ?", (int(f.get("id", 0)),))
+            return redirect(url_for("sugestoes"))
+        if f.get("acao") == "reenviar" and g.usuario["admin"]:
+            ok = feedback.enviar(g.con, int(f.get("id", 0)))
+            flash("E-mail enviado." if ok else "Não consegui enviar agora; veja o erro na lista.", "ok" if ok else "erro")
+            return redirect(url_for("sugestoes"))
+        try:
+            nota = f.get("nota_id", "").strip()
+            fid = feedback.registrar(
+                g.con, g.usuario["login"], f.get("tipo", ""), f.get("mensagem", ""), f.get("origem", ""),
+                int(nota) if nota.isdigit() else None,
+                f"ambiente={db.obter_config(g.con)['ambiente']}; navegador={request.headers.get('User-Agent', '')[:150]}")
+            enviado = g.con.execute("SELECT enviado_em FROM feedback WHERE id = ?", (fid,)).fetchone()[0]
+            flash("Obrigado! Sua mensagem foi enviada ao responsável pelo sistema." if enviado else
+                  "Obrigado! Sua mensagem foi registrada e será enviada ao responsável assim que o e-mail estiver disponível.", "ok")
+            return redirect(url_for("sugestoes"))
+        except ValueError as e:
+            flash(str(e), "erro")
+    lista = []
+    if g.usuario["admin"]:
+        lista = g.con.execute("SELECT * FROM feedback ORDER BY resolvido_em IS NOT NULL, id DESC LIMIT 100").fetchall()
+    origem = request.form.get("origem") or request.args.get("de", "")
+    return render_template("sugestoes.html", lista=lista, tipos=feedback.TIPOS, origem=origem,
+                           nota_id=request.args.get("nota", ""), maximo=feedback.MAX_MENSAGEM,
+                           f=request.form if request.method == "POST" else {})
+
+
 # ------------------------------------------------------------------------------------- configuração
 @admin_requerido
 def configuracao():
@@ -641,5 +674,6 @@ _ROTAS = [
     ("/agendamentos", "agendamentos", agendamentos, _G), ("/agendamentos/novo", "agendamento_novo", agendamento_form, _GP),
     ("/agendamentos/gerar", "agendamentos_gerar", agendamentos_gerar, _P),
     ("/agendamentos/<int:aid>", "agendamento_editar", agendamento_form, _GP),
+    ("/sugestoes", "sugestoes", sugestoes, _GP),
     ("/configuracao", "configuracao", configuracao, _GP),
 ]

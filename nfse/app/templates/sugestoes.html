@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>Sugestões e inconsistências</h1>
+<p class="suave">Achou algo errado, estranho ou que poderia ser melhor? Escreva aqui: a mensagem chega direto ao responsável pelo sistema, com a tela em que você estava.</p>
+<div class="cartao"><form method="post" class="grade">{{ csrf() }}
+ <input type="hidden" name="origem" value="{{ origem }}"><input type="hidden" name="nota_id" value="{{ nota_id }}">
+ <fieldset class="largo"><legend>O que é?</legend>
+  <label class="check"><input type="radio" name="tipo" value="inconsistencia" {{ 'checked' if f.get('tipo', 'inconsistencia') == 'inconsistencia' }}> Inconsistência / erro (algo não saiu como esperado)</label>
+  <label class="check"><input type="radio" name="tipo" value="sugestao" {{ 'checked' if f.get('tipo') == 'sugestao' }}> Sugestão de melhoria</label></fieldset>
+ {% if nota_id %}<p class="largo suave">Referente à nota #{{ nota_id }}.</p>{% endif %}
+ <label class="largo">Descreva <textarea name="mensagem" rows="7" maxlength="{{ maximo }}" required placeholder="O que aconteceu? O que você esperava? Em que nota/cliente?">{{ f.get('mensagem','') }}</textarea></label>
+ <div class="largo"><button class="botao grande">Enviar</button> <small class="suave">Não escreva senhas.</small></div>
+</form></div>
+{% if g.usuario.admin %}
+<div class="cartao"><h2>Mensagens recebidas</h2>
+<table><tr><th>Quando</th><th>Quem</th><th>Tipo</th><th>Mensagem</th><th>E-mail</th><th></th></tr>
+{% for m in lista %}<tr class="{{ 'inativo' if m.resolvido_em }}"><td>{{ m.em }}</td><td>{{ m.usuario }}</td><td>{{ tipos[m.tipo] }}</td>
+<td><pre class="descricao">{{ m.mensagem }}</pre><small class="suave">{{ m.origem }}{% if m.nota_id %} · <a href="{{ url_for('nota_detalhe', nid=m.nota_id) }}">nota #{{ m.nota_id }}</a>{% endif %}</small></td>
+<td>{% if m.enviado_em %}enviado{% else %}<span class="badge vermelho">pendente</span> <small>{{ m.envio_erro }}</small>
+ <form method="post" class="linha">{{ csrf() }}<input type="hidden" name="id" value="{{ m.id }}"><button class="botao pequeno claro" name="acao" value="reenviar">Reenviar</button></form>{% endif %}</td>
+<td><form method="post" class="linha">{{ csrf() }}<input type="hidden" name="id" value="{{ m.id }}"><button class="link" name="acao" value="resolver">{{ 'reabrir' if m.resolvido_em else 'marcar resolvido' }}</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="suave">Nenhuma mensagem ainda.</td></tr>{% endfor %}</table></div>
+{% endif %}
+{% endblock %}

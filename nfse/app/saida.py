@@ -67,7 +67,8 @@ def testar_pasta(cfg: dict) -> str:
     return str(pasta.resolve())
 
 
-def enviar_email(destinos: list[str], assunto: str, corpo: str, anexos: list[tuple[str, bytes, str]]) -> None:
+def enviar_email(destinos: list[str], assunto: str, corpo: str, anexos: list[tuple[str, bytes, str]],
+                responder_para: str | None = None) -> None:
     """anexos: [(nome, bytes, 'tipo/subtipo')]. Levanta exceção se o SMTP não estiver configurado/falhar."""
     smtp = config.smtp()
     if not smtp:
@@ -77,7 +78,9 @@ def enviar_email(destinos: list[str], assunto: str, corpo: str, anexos: list[tup
     msg = EmailMessage()
     msg["From"] = smtp["remetente"]
     msg["To"] = ", ".join(destinos)
-    msg["Subject"] = assunto
+    msg["Subject"] = " ".join(assunto.split())[:200]   # uma linha só (sem injeção de cabeçalho)
+    if responder_para:
+        msg["Reply-To"] = responder_para
     msg.set_content(corpo)
     for nome, dados, tipo in anexos:
         principal, _, sub = tipo.partition("/")

@@ -59,3 +59,8 @@ def smtp() -> dict | None:
     return {"host": host, "porta": int(os.environ.get("SMTP_PORT", "587")), "usuario": usuario,
             "senha": os.environ.get("SMTP_SENHA", ""), "remetente": os.environ.get("SMTP_FROM") or usuario,
             "ssl": os.environ.get("SMTP_SSL", "0") == "1"}
+
+
+def email_suporte() -> str:
+    """Quem recebe as sugestões/inconsistências enviadas pelos usuários."""
+    return os.environ.get("NFSE_SUPORTE_EMAIL") or "junioaraujo.adv@gmail.com"

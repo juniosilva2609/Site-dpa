@@ -1,9 +1,10 @@
 # -*- coding: utf-8 -*-
 """Alertas: aparecem no painel e (se o e-mail estiver configurado) são enviados uma única vez."""
 
+import os
 import sqlite3
 
-from . import db, saida
+from . import config, db, saida
 
 
 def abrir(con: sqlite3.Connection, chave: str, mensagem: str, nivel: str = "aviso", nota_id: int | None = None) -> None:
@@ -39,6 +40,8 @@ def enviar_pendentes(con: sqlite3.Connection) -> int:
     """Manda por e-mail (um só e-mail resumo) os alertas ainda não enviados. Devolve quantos foram."""
     cfg = db.obter_config(con)
     destinos = saida.lista_emails(cfg["email_alertas"]) or saida.lista_emails(cfg["emails_destino"])
+    if os.environ.get("NFSE_SUPORTE_COPIA_ALERTAS") == "1" and config.email_suporte() not in destinos:
+        destinos = destinos + [config.email_suporte()]   # opt-in: o responsável pelo sistema também é avisado
     pendentes = con.execute("SELECT * FROM alerta WHERE resolvido_em IS NULL AND email_enviado_em IS NULL "
                             "AND nivel IN ('aviso','erro') ORDER BY id").fetchall()
     if not pendentes or not destinos:

@@ -15,6 +15,7 @@
     <a href="{{ url_for('notas') }}">Notas</a>
     <a href="{{ url_for('agendamentos') }}">Agendamentos</a>
     <a href="{{ url_for('clientes') }}">Clientes</a>
+    <a href="{{ url_for('sugestoes', de=request.path) }}">Sugestões</a>
     {% if g.usuario.admin %}<a href="{{ url_for('configuracao') }}">Configuração</a><a href="{{ url_for('usuarios') }}">Usuários</a>{% endif %}
   </nav>
   <form method="post" action="{{ url_for('sair') }}" class="sair">

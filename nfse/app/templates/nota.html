@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 {% from "_macros.html" import badge, csrf, lista_conferencia %}
 {% block corpo %}
-<div class="titulo-acoes"><h1>Nota #{{ n.id }} {{ badge(n.status) }}</h1><a href="{{ url_for('notas') }}">← Voltar às notas</a></div>
+<div class="titulo-acoes"><h1>Nota #{{ n.id }} {{ badge(n.status) }}</h1><span><a href="{{ url_for('sugestoes', de=request.path, nota=n.id) }}">Reportar problema nesta nota</a> · <a href="{{ url_for('notas') }}">← Voltar às notas</a></span></div>
 {% if n.mensagem_erro %}<div class="aviso erro">{{ n.mensagem_erro }}</div>{% endif %}
 {% if n.ambiente == 'homologacao' and n.status in ('emitida','cancelada') %}<div class="faixa teste">Emitida em HOMOLOGAÇÃO (teste): sem validade jurídica.</div>{% endif %}
 

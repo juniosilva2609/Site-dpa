@@ -11,7 +11,7 @@ import threading
 import time
 from datetime import datetime, timedelta
 
-from . import agenda, alertas, conferencia, db, emissor, saida, util
+from . import agenda, alertas, conferencia, db, emissor, feedback, saida, util
 from .fiscal import certificado
 
 log = logging.getLogger("nfse.agendador")
@@ -227,7 +227,8 @@ def _seguro(con, nome, funcao) -> None:
 def manutencao(con: sqlite3.Connection) -> None:
     for nome, passo in (("emissoes-travadas", recuperar_emissoes_travadas), ("lembretes", lembretes_conferencia),
                         ("certificado", alertas_certificado), ("entregas", entregas_pendentes),
-                        ("backup", backup_diario), ("alertas-email", alertas.enviar_pendentes)):
+                        ("backup", backup_diario), ("alertas-email", alertas.enviar_pendentes),
+                        ("sugestoes", feedback.enviar_pendentes)):
         _seguro(con, nome, passo)
 
 

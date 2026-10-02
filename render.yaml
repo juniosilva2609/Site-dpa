@@ -35,5 +35,7 @@ services:
         sync: false
       - key: SMTP_SENHA             # senha de app do Gmail
         sync: false
+      - key: NFSE_SUPORTE_COPIA_ALERTAS   # "1" = copia os alertas do sistema para junioaraujo.adv@gmail.com
+        sync: false
       - key: NFSE_BACKUP_EMAIL      # "1" = manda o backup diário por e-mail (opcional)
         sync: false

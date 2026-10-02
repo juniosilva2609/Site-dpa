@@ -47,6 +47,13 @@ As mesmas conferências rodam **de novo no instante da emissão**.
 * Se o programa cair no meio de uma emissão, a nota fica em **Verificar** (nunca volta sozinha para a fila).
 * Falha de pasta/e-mail **nunca** muda o estado fiscal da nota; a rotina tenta de novo e alerta.
 
+## Sugestões e inconsistências
+Menu **Sugestões** (e o link "Reportar problema nesta nota"): qualquer usuário escreve uma sugestão ou relata uma
+inconsistência; fica registrada no sistema e **chega por e-mail em junioaraujo.adv@gmail.com** (troque com
+`NFSE_SUPORTE_EMAIL`), já com usuário, tela, nota e ambiente. Sem SMTP/e-mail fora do ar, a mensagem fica *pendente* e é
+reenviada automaticamente (o administrador vê a lista, pode reenviar e marcar como resolvida). Opcional:
+`NFSE_SUPORTE_COPIA_ALERTAS=1` copia também os alertas do sistema para esse e-mail. Requer SMTP configurado.
+
 ## Entrega dos arquivos
 *Configuração → 3.* Salva em `<pasta>/<ano>/<mês>/NFSE <nº> - <descrição> - <cliente>.pdf|xml`
 (notas de teste levam o prefixo `HOMOLOG -`). E/ou envia por e-mail (PDF+XML anexos) para a lista que você definir e,
@@ -81,6 +88,7 @@ Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cr
 | `NFSE_PROXY=1` | Atrás de proxy (Render): usa o IP/https reais |
 | `NFSE_BACKUP_EMAIL=1` | Envia o backup diário compactado por e-mail |
 | `NFSE_DANFSE_LAYOUT` | `v1` (padrão, igual ao modelo da JL) ou `v2` (NT 008/2026) |
+| `NFSE_SUPORTE_EMAIL` / `NFSE_SUPORTE_COPIA_ALERTAS` | Destino das sugestões (padrão: junioaraujo.adv@gmail.com) / copia alertas a ele |
 | `NFSE_DEV=1` | Só desenvolvimento local em HTTP (desliga o cookie “Secure”) |
 
 ## Roteiro para entrar em produção
