@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Agendamentos (emissões padrão)</h1><div class="acoes">
+ <form method="post" action="{{ url_for('agendamentos_gerar') }}">{{ csrf() }}<button class="botao claro">Gerar notas agora</button></form>
+ <a class="botao" href="{{ url_for('agendamento_novo') }}">+ Novo agendamento</a></div></div>
+<p class="suave">Cada agendamento gera uma nota <b>"A conferir"</b> alguns dias antes. Depois de conferida e aprovada, ela é emitida sozinha no dia e hora marcados.</p>
+<div class="cartao"><table><tr><th>Nome</th><th>Cliente</th><th>Valor</th><th>Quando</th><th>Próxima</th><th>Conferência</th><th></th></tr>
+{% for a in lista %}<tr class="{{ '' if a.ativo else 'inativo' }}"><td>{{ a.nome }}{% if not a.ativo %} <span class="badge cinza">pausado</span>{% endif %}</td><td>{{ a.cliente }}</td><td>{{ a.valor_centavos|valor }}</td>
+<td>{% if a.frequencia == 'mensal' %}Todo dia {{ a.dia_mes }} às {{ a.hora }}{% elif a.frequencia == 'semanal' %}{{ ['segunda','terça','quarta','quinta','sexta','sábado','domingo'][a.dia_semana] }} às {{ a.hora }}{% else %}{{ a.data_unica|data }} às {{ a.hora }}{% endif %}</td>
+<td>{{ a.proxima.strftime('%Y-%m-%d %H:%M')|dt if a.proxima else '-' }}</td><td>{{ 'automática' if a.auto_aprovar else 'manual' }}</td><td><a href="{{ url_for('agendamento_editar', aid=a.id) }}">Editar</a></td></tr>
+{% else %}<tr><td colspan="7" class="suave">Nenhum agendamento ainda.</td></tr>{% endfor %}</table></div>
+{% endblock %}

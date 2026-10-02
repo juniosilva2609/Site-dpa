@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, lista_conferencia %}
+{% block corpo %}
+{% if cfg.ambiente != 'producao' %}<div class="faixa teste">AMBIENTE DE TESTE (homologação): as notas emitidas aqui NÃO têm validade jurídica.</div>{% endif %}
+<h1>Painel</h1>
+
+{% if agendador_parado %}<div class="aviso erro">O agendador não deu sinal nos últimos minutos{% if ultimo_ciclo %} (último: {{ ultimo_ciclo }}){% endif %}. As notas agendadas <b>não serão emitidas</b> até ele voltar. Reinicie o serviço.</div>{% endif %}
+
+{% for a in alertas %}<div class="aviso {{ 'erro' if a.nivel == 'erro' else 'atencao' }}">{{ a.mensagem }}{% if a.nota_id %} <a href="{{ url_for('nota_detalhe', nid=a.nota_id) }}">Abrir nota</a>{% endif %}</div>{% endfor %}
+
+{% if g.usuario.admin and problemas_config %}
+<div class="cartao"><h2>Configuração</h2>{{ lista_conferencia(problemas_config) }}<a href="{{ url_for('configuracao') }}">Ir para Configuração</a></div>
+{% endif %}
+
+<div class="cartao"><h2>Precisam da sua atenção ({{ atencao|length }})</h2>
+{% if atencao %}<table><tr><th>Quando</th><th>Cliente</th><th>Valor</th><th>Situação</th><th></th></tr>
+{% for n in atencao %}<tr><td>{{ n.prevista_em|dt }}</td><td>{{ n.cliente }}</td><td>{{ n.valor_centavos|valor }}</td><td>{{ badge(n.status) }}</td><td><a class="botao pequeno" href="{{ url_for('nota_detalhe', nid=n.id) }}">{{ 'Conferir' if n.status == 'a_conferir' else 'Ver' }}</a></td></tr>{% endfor %}</table>
+{% else %}<p class="suave">Nada pendente. 👍</p>{% endif %}</div>
+
+<div class="cartao"><h2>Próximas emissões automáticas ({{ proximas|length }})</h2>
+{% if proximas %}<table><tr><th>Quando</th><th>Cliente</th><th>Valor</th><th>Conferida por</th><th></th></tr>
+{% for n in proximas %}<tr><td>{{ n.prevista_em|dt }}</td><td>{{ n.cliente }}</td><td>{{ n.valor_centavos|valor }}</td><td>{{ n.conferido_por or '-' }}</td><td><a href="{{ url_for('nota_detalhe', nid=n.id) }}">Ver</a></td></tr>{% endfor %}</table>
+{% else %}<p class="suave">Nenhuma nota aprovada aguardando o horário.</p>{% endif %}</div>
+
+<div class="cartao"><h2>Últimas notas emitidas</h2>
+{% if recentes %}<table><tr><th>Nº</th><th>Emitida em</th><th>Cliente</th><th>Valor</th><th>Arquivos</th><th></th></tr>
+{% for n in recentes %}<tr><td>{{ n.numero_nfse or '-' }}</td><td>{{ n.emitida_em|dt }}</td><td>{{ n.cliente }}</td><td>{{ n.valor_centavos|valor }}</td>
+<td>{% if n.pasta_erro or n.email_erro %}<span class="badge vermelho">Entrega com problema</span>{% else %}<span class="suave">{{ 'pasta ✔' if n.pdf_path }} {{ 'e-mail ✔' if n.email_enviado_em }}</span>{% endif %}</td>
+<td><a href="{{ url_for('nota_detalhe', nid=n.id) }}">Abrir</a></td></tr>{% endfor %}</table>
+{% else %}<p class="suave">Ainda não há notas emitidas.</p>{% endif %}</div>
+
+<p class="suave rodape">Certificado: {% if not cert_ok %}não configurado{% elif dias_cert is none %}não abre{% elif dias_cert < 0 %}VENCIDO{% else %}válido por mais {{ dias_cert }} dia(s){% endif %} · Ambiente: {{ cfg.ambiente }} · Último ciclo do agendador: {{ ultimo_ciclo or '-' }}</p>
+{% endblock %}

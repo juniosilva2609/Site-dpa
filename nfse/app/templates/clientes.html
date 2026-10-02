@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Clientes (tomadores)</h1><a class="botao" href="{{ url_for('cliente_novo') }}">+ Novo cliente</a></div>
+<div class="cartao"><table><tr><th>Nome / razão social</th><th>CPF/CNPJ</th><th>Cidade</th><th>E-mail</th><th></th></tr>
+{% for c in lista %}<tr class="{{ '' if c.ativo else 'inativo' }}"><td>{{ c.nome }}{% if not c.ativo %} <span class="badge cinza">inativo</span>{% endif %}</td><td>{{ c.documento|doc }}</td><td>{{ c.codigo_municipio|cidade }}</td><td>{{ c.email }}</td><td><a href="{{ url_for('cliente_editar', cid=c.id) }}">Editar</a></td></tr>
+{% else %}<tr><td colspan="5" class="suave">Nenhum cliente cadastrado.</td></tr>{% endfor %}</table></div>
+{% endblock %}

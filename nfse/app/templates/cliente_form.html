@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>{{ 'Editar' if c and c.get('id') else 'Novo' }} cliente</h1>
+<div class="cartao"><form method="post" class="grade">{{ csrf() }}
+ <label class="largo">Nome completo / razão social <small class="suave">(igual ao da Receita Federal)</small> <input name="nome" value="{{ c.get('nome','') if c else '' }}" required></label>
+ <label>CPF ou CNPJ <input name="documento" inputmode="numeric" value="{{ (c.get('documento','')|doc) if c else '' }}" required></label>
+ <label>E-mail <input type="email" name="email" value="{{ c.get('email','') if c else '' }}"></label>
+ <label>Telefone <input name="telefone" value="{{ c.get('telefone','') if c else '' }}"></label>
+ <fieldset class="largo"><legend>Endereço (opcional, mas se preencher, preencha tudo menos o complemento)</legend><div class="grade">
+  <label>CEP <input name="cep" value="{{ c.get('cep','') if c else '' }}"></label>
+  <label>Rua / avenida <input name="logradouro" value="{{ c.get('logradouro','') if c else '' }}"></label>
+  <label>Número <input name="numero" value="{{ c.get('numero','') if c else '' }}"></label>
+  <label>Complemento <input name="complemento" value="{{ c.get('complemento','') if c else '' }}"></label>
+  <label>Bairro <input name="bairro" value="{{ c.get('bairro','') if c else '' }}"></label>
+  <label>Cidade <input name="cidade" value="{{ cidade }}"></label>
+  <label>UF <select name="uf">{% for u in ufs %}<option {{ 'selected' if u == uf }}>{{ u }}</option>{% endfor %}</select></label></div></fieldset>
+ <label class="check largo"><input type="checkbox" name="enviar_nota_por_email" {{ 'checked' if c and c.get('enviar_nota_por_email') }}> Enviar a nota emitida também para o e-mail deste cliente</label>
+ {% if c and c.get('id') %}<label class="check largo"><input type="checkbox" name="ativo" {{ 'checked' if c.get('ativo') }}> Cliente ativo</label>{% endif %}
+ <div class="largo"><button class="botao grande">Salvar cliente</button></div>
+</form></div>
+{% endblock %}

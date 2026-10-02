@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block corpo %}
+<h1>Teste de conexão com a Sefin ({{ ambiente }})</h1>
+<div class="cartao"><table><tr><th>Etapa</th><th>Resultado</th><th>Detalhe</th></tr>
+{% for e in etapas %}<tr><td>{{ e.etapa }}</td><td>{{ '✔ OK' if e.ok else '✖ Falhou' }}</td><td>{{ e.detalhe }}</td></tr>{% endfor %}</table></div>
+<a class="botao" href="{{ url_for('configuracao') }}">Voltar</a>
+{% endblock %}

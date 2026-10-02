@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block titulo %}NFS-e Automática{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+{% if g.usuario %}
+<header class="topo">
+  <a class="marca" href="{{ url_for('painel') }}">NFS-e Automática</a>
+  <nav>
+    <a href="{{ url_for('painel') }}">Painel</a>
+    <a href="{{ url_for('notas') }}">Notas</a>
+    <a href="{{ url_for('agendamentos') }}">Agendamentos</a>
+    <a href="{{ url_for('clientes') }}">Clientes</a>
+    {% if g.usuario.admin %}<a href="{{ url_for('configuracao') }}">Configuração</a><a href="{{ url_for('usuarios') }}">Usuários</a>{% endif %}
+  </nav>
+  <form method="post" action="{{ url_for('sair') }}" class="sair">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    <a href="{{ url_for('conta') }}">{{ g.usuario.nome }}</a>
+    <button class="link">Sair</button>
+  </form>
+</header>
+{% endif %}
+<main>
+{% with msgs = get_flashed_messages(with_categories=true) %}
+  {% for cat, msg in msgs %}<div class="aviso {{ cat }}" role="alert">{{ msg }}</div>{% endfor %}
+{% endwith %}
+{% block corpo %}{% endblock %}
+</main>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

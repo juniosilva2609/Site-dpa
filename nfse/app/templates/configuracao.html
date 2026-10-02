@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>Configuração</h1>
+
+<div class="cartao"><h2>1. Certificado digital (e-CNPJ A1)</h2>
+ <ul class="conferencia">
+  <li class="{{ 'ok' if cert_arquivo else 'erro' }}"><b>{{ '✔' if cert_arquivo else '✖' }}</b> Arquivo .pfx {{ 'enviado' if cert_arquivo else 'não enviado' }}</li>
+  <li class="{{ 'ok' if cert_senha else 'erro' }}"><b>{{ '✔' if cert_senha else '✖' }}</b> Senha {{ 'definida' if cert_senha else 'NÃO definida' }} na variável de ambiente <code>NFSE_CERT_SENHA</code> (a senha nunca é digitada aqui)</li>
+  {% if dias_cert is not none %}<li class="{{ 'ok' if dias_cert > 30 else 'erro' }}"><b>{{ '✔' if dias_cert > 30 else '⚠' }}</b> {{ 'Vence em ' ~ dias_cert ~ ' dia(s)' if dias_cert >= 0 else 'VENCIDO' }}</li>{% endif %}
+ </ul>
+ <form method="post" enctype="multipart/form-data" class="linha">{{ csrf() }}<input type="hidden" name="acao" value="certificado"><input type="file" name="pfx" accept=".pfx,.p12" required><button class="botao pequeno">Enviar certificado</button></form>
+ <form method="post" class="linha">{{ csrf() }}<button class="botao claro pequeno" name="acao" value="testar_conexao">Testar conexão com a Sefin</button> <button class="botao claro pequeno" name="acao" value="testar_convenio">Testar convênio do município</button></form>
+</div>
+
+<form method="post" class="cartao grade">{{ csrf() }}<input type="hidden" name="acao" value="fiscal">
+ <h2 class="largo">2. Prestador e dados fiscais</h2>
+ <label class="largo">Razão social <input name="razao_social" value="{{ cfg.razao_social }}"></label>
+ <label>CNPJ <input name="cnpj" value="{{ cfg.cnpj|doc }}" required></label>
+ <label>Inscrição municipal <input name="inscricao_municipal" value="{{ cfg.inscricao_municipal }}"></label>
+ <label>Telefone <input name="telefone" value="{{ cfg.telefone }}"></label>
+ <label>E-mail do prestador <input type="email" name="email" value="{{ cfg.email }}"></label>
+ <label>Município (código IBGE) <input name="codigo_municipio_ibge" value="{{ cfg.codigo_municipio_ibge }}" required><small class="suave">{{ cidade }}</small></label>
+ <label>Regime <select name="regime_tributario"><option value="simples" {{ 'selected' if cfg.regime_tributario == 'simples' }}>Simples Nacional (ME/EPP)</option><option value="normal" {{ 'selected' if cfg.regime_tributario == 'normal' }}>Não optante</option></select></label>
+ <label>Código de tributação nacional (6 dígitos) <input name="codigo_servico_lc116" value="{{ cfg.codigo_servico_lc116 }}" required><small class="suave">160201 = 16.02.01 (transporte municipal)</small></label>
+ <label>Código de tributação municipal <input name="codigo_tributacao_municipal" value="{{ cfg.codigo_tributacao_municipal }}"><small class="suave">Ex.: 004. Em branco = não envia.</small></label>
+ <label>Código NBS (opcional) <input name="codigo_nbs" value="{{ cfg.codigo_nbs }}"></label>
+ <label>Alíquota ISS % (só não optante) <input name="aliquota_iss" value="{{ cfg.aliquota_iss or '' }}"></label>
+ <label>Série da DPS <input name="serie_dps" value="{{ cfg.serie_dps }}"></label>
+ <label>Próximo nº da DPS <input name="proximo_numero_dps" type="number" min="1" value="{{ cfg.proximo_numero_dps }}"></label>
+ <label class="check largo"><input type="checkbox" name="confirmar_numero" value="1"> Estou alterando o próximo nº da DPS de propósito</label>
+ <fieldset class="largo"><legend>Ambiente</legend>
+  <label class="check"><input type="radio" name="ambiente" value="homologacao" {{ 'checked' if cfg.ambiente != 'producao' }}> Homologação (teste, sem validade jurídica)</label>
+  <label class="check"><input type="radio" name="ambiente" value="producao" {{ 'checked' if cfg.ambiente == 'producao' }}> <b>Produção</b> (notas reais)</label>
+  {% if cfg.ambiente != 'producao' %}<label>Para ir a produção, digite <b>PRODUCAO</b>: <input class="curto" name="confirmar_producao" autocomplete="off"></label>{% endif %}
+ </fieldset>
+ <div class="largo"><button class="botao">Salvar dados fiscais</button></div>
+</form>
+
+<form method="post" class="cartao grade">{{ csrf() }}<input type="hidden" name="acao" value="saida">
+ <h2 class="largo">3. Onde guardar / para quem enviar cada nota</h2>
+ <label class="check largo"><input type="checkbox" name="salvar_em_pasta" {{ 'checked' if cfg.salvar_em_pasta }}> Salvar PDF e XML numa pasta</label>
+ <label class="largo">Pasta <input name="pasta_saida" value="{{ cfg.pasta_saida }}" placeholder="vazio = {{ pasta_efetiva }}"><small class="suave">Cria subpastas ano/mês. Em uso hoje: {{ pasta_efetiva }}</small></label>
+ <label class="check largo"><input type="checkbox" name="enviar_por_email" {{ 'checked' if cfg.enviar_por_email }}> Enviar PDF e XML por e-mail {% if not smtp_ok %}<b class="vermelho-texto">(servidor de e-mail ainda não configurado: defina SMTP_HOST, SMTP_USER e SMTP_SENHA)</b>{% endif %}</label>
+ <label class="largo">E-mails que recebem cada nota <input name="emails_destino" value="{{ cfg.emails_destino }}" placeholder="contador@exemplo.com, voce@exemplo.com"></label>
+ <label class="largo">E-mails que recebem os alertas <input name="email_alertas" value="{{ cfg.email_alertas }}" placeholder="vazio = os mesmos de cima"></label>
+ <label>Tolerância de atraso (horas) <input class="curto" type="number" min="1" max="48" name="tolerancia_atraso_horas" value="{{ cfg.tolerancia_atraso_horas }}"><small class="suave">Passou disso sem emitir, a nota fica "Atrasada" e só sai com o seu OK.</small></label>
+ <div class="largo"><button class="botao">Salvar destino</button></div>
+</form>
+<form method="post" class="cartao linha">{{ csrf() }}<button class="botao claro pequeno" name="acao" value="testar_pasta">Testar gravação na pasta</button> <button class="botao claro pequeno" name="acao" value="testar_email">Enviar e-mail de teste</button></form>
+{% endblock %}

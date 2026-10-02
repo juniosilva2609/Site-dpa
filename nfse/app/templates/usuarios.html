@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>Usuários</h1>
+<div class="cartao"><table>
+<tr><th>Nome</th><th>Usuário</th><th>Perfil</th><th>Situação</th><th>Redefinir senha</th></tr>
+{% for u in lista %}<tr>
+ <td>{{ u.nome }}</td><td>{{ u.login }}</td><td>{{ 'Administrador' if u.admin else 'Operador' }}</td>
+ <td><form method="post" class="linha">{{ csrf() }}<input type="hidden" name="id" value="{{ u.id }}">
+   {% if u.ativo %}Ativo <button class="link" name="acao" value="desativar">desativar</button>{% else %}Inativo <button class="link" name="acao" value="ativar">ativar</button>{% endif %}</form></td>
+ <td><form method="post" class="linha">{{ csrf() }}<input type="hidden" name="id" value="{{ u.id }}"><input type="password" name="senha" placeholder="nova senha" minlength="8" autocomplete="new-password"><button class="botao pequeno" name="acao" value="senha">Trocar</button></form></td>
+</tr>{% endfor %}</table></div>
+<div class="cartao"><h2>Novo usuário</h2>
+<form method="post" class="grade">{{ csrf() }}<input type="hidden" name="acao" value="novo">
+ <label>Nome <input name="nome"></label><label>Usuário <input name="login" required></label>
+ <label>Senha (mín. 8) <input type="password" name="senha" required minlength="8" autocomplete="new-password"></label>
+ <label class="check"><input type="checkbox" name="admin"> Administrador (configura o sistema e cancela notas)</label>
+ <button class="botao">Criar</button></form></div>
+{% endblock %}

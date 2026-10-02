@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>Nova nota avulsa</h1>
+<div class="cartao"><form method="post" class="grade">{{ csrf() }}
+ <label>Cliente
+  <select name="cliente_id" required><option value="">Escolha…</option>{% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if n.get('cliente_id')|string == c.id|string }}>{{ c.nome }}</option>{% endfor %}</select></label>
+ <label>Data de emissão <input type="date" name="prevista_data" value="{{ n.get('prevista_data','') }}" required></label>
+ <label>Hora <input type="time" name="prevista_hora" value="{{ n.get('prevista_hora','') }}" required></label>
+ <label>Valor (R$) <input name="valor" inputmode="decimal" placeholder="500,00" value="{{ n.get('valor','') }}" required></label>
+ <label class="largo">Descrição do serviço <textarea name="descricao" rows="6" data-contador="cont" required>{{ n.get('descricao','') }}</textarea>
+  <small class="suave">Máximo {{ 1297 }} caracteres. <span id="cont"></span></small></label>
+ <label>Competência (opcional) <input type="date" name="competencia" value="{{ n.get('competencia','') }}"><small class="suave">Em branco = o dia da emissão.</small></label>
+ <div class="largo"><button class="botao grande">Salvar e conferir</button></div>
+</form></div>
+{% endblock %}

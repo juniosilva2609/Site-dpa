@@ -1,0 +1,110 @@
+# NFS-e Automática
+
+Sistema web simples para **emitir NFS-e de serviço prestado** (Sistema Nacional / Portal Nacional),
+com **emissões padrão agendadas**: o sistema monta a nota alguns dias antes, você **confere e aprova**,
+e na **data e hora marcadas** ele emite sozinho e entrega **PDF + XML** numa pasta e/ou por e-mail.
+
+Prestador pré-configurado a partir da nota modelo: **JL Transportes Executivos Ltda**
+(CNPJ 60.441.511/0001-70, Belo Horizonte-MG, Simples Nacional ME/EPP, código 16.02.01, cód. municipal 004).
+Tudo pode ser alterado em *Configuração*.
+
+## Como funciona (3 passos)
+
+1. **Clientes** — cadastre quem recebe a nota (CPF ou CNPJ válidos; endereço é opcional).
+2. **Agendamentos** — crie o modelo da emissão padrão: cliente, valor, descrição e quando
+   (todo mês no dia X, toda semana, ou uma vez). A descrição aceita `{mes_ano}`, `{data}`, `{mes}`, `{ano}`,
+   `{competencia}`, trocados em cada emissão.
+3. **Conferir e aprovar** — a nota entra em *A conferir* N dias antes. Abra, veja a lista de conferências
+   automáticas, ajuste o que precisar e clique **“Conferi: aprovar emissão”**. No horário, o sistema emite.
+
+Nota **sem aprovação não é emitida** (a menos que o agendamento esteja marcado para aprovação automática).
+Também é possível criar nota avulsa e usar **Emitir agora**.
+
+### Estados de uma nota
+| Estado | Significado |
+|---|---|
+| A conferir | Aguardando você conferir/aprovar |
+| Aprovada | Sai sozinha no horário marcado |
+| Emitida | NFS-e autorizada; PDF/XML disponíveis |
+| Erro: corrigir | A Sefin recusou com uma mensagem clara; corrija e emita de novo |
+| **Verificar** | A resposta da Sefin foi incerta (queda de conexão/timeout). **Não duplica**: ver abaixo |
+| Atrasada | Passou da tolerância (padrão 6 h) sem sair; só emite com seu OK manual |
+| Cancelada / Pulada | Cancelada na Sefin / ocorrência descartada |
+
+## Conferências automáticas (bloqueiam a emissão)
+CPF/CNPJ do cliente válido e cliente ativo · valor > 0 · descrição preenchida, sem `{campo}` sobrando e ≤ 1297
+caracteres (acima disso o DANFSe oficial corta o texto) · CNPJ do prestador válido · certificado presente, aberto
+com a senha, **não vencido** e com o **mesmo CNPJ** do prestador. Avisos (não bloqueiam): homologação, certificado
+perto de vencer, valor diferente da última nota, possível nota duplicada no mês, endereço do cliente incompleto.
+As mesmas conferências rodam **de novo no instante da emissão**.
+
+## Por que é seguro contra nota duplicada
+* Uma emissão por vez (trava no banco) e reserva atômica da nota; clique duplo não gera duas notas.
+* O número da DPS (nDPS) é reservado antes do envio. Rejeição clara **devolve** o número.
+* Falha de rede/timeout/HTTP 5xx → nota vai para **Verificar**; o número fica reservado e o sistema **nunca reemite sozinho**.
+  Na tela você pode: *Conferir na Sefin*, *Tentar emitir de novo* (usa o **mesmo Id de DPS**, que a Sefin recusa se
+  já existir) ou *Anexar o XML* baixado do Portal Nacional.
+* Se o programa cair no meio de uma emissão, a nota fica em **Verificar** (nunca volta sozinha para a fila).
+* Falha de pasta/e-mail **nunca** muda o estado fiscal da nota; a rotina tenta de novo e alerta.
+
+## Entrega dos arquivos
+*Configuração → 3.* Salva em `<pasta>/<ano>/<mês>/NFSE <nº> - <descrição> - <cliente>.pdf|xml`
+(notas de teste levam o prefixo `HOMOLOG -`). E/ou envia por e-mail (PDF+XML anexos) para a lista que você definir e,
+se marcado no cliente, para o e-mail dele. O PDF é o **DANFSe** gerado a partir do XML oficial (mesmo motor validado
+no sistema anterior). A pasta pode ser uma pasta sincronizada (Google Drive para computador, OneDrive etc.).
+
+## Instalação
+```bash
+cd nfse
+pip install -r requirements.txt
+export NFSE_ADMIN_SENHA='uma-senha-forte'   # cria o administrador "admin" no 1º start (ou use /primeiro-acesso)
+export NFSE_CERT_SENHA='senha-do-certificado'
+export NFSE_DEV=1                           # SÓ para teste local em HTTP
+python run.py                               # http://127.0.0.1:8000
+```
+Em produção: `gunicorn wsgi:app --workers 1 --threads 4 --timeout 120` (ver `Procfile`/`render.yaml`), sempre com HTTPS.
+**Use 1 worker**: o agendador roda numa thread do próprio servidor (há trava no banco, mas 1 processo é o suportado).
+Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cron a cada minuto).
+
+### Variáveis de ambiente (segredos nunca vão para banco/tela/log/git)
+| Variável | Para quê |
+|---|---|
+| `NFSE_CERT_SENHA` | Senha do certificado e-CNPJ A1 (obrigatória) |
+| `NFSE_CERT_PATH` | Caminho do .pfx (padrão: o enviado na tela Configuração, em `<dados>/certificado.pfx`) |
+| `NFSE_DATA_DIR` | Pasta persistente do banco, certificado e backups (padrão `nfse/data`) |
+| `NFSE_SAIDA_DIR` | Pasta padrão dos PDF/XML (padrão `nfse/saida`) |
+| `SECRET_KEY` | Chave das sessões (se ausente, é gerada e guardada em `<dados>/secret_key`) |
+| `NFSE_ADMIN_USER` / `NFSE_ADMIN_SENHA` | Cria o administrador inicial |
+| `NFSE_SETUP_CODE` | Se definida, `/primeiro-acesso` exige esse código (recomendado em servidor público) |
+| `SMTP_HOST` `SMTP_PORT` `SMTP_USER` `SMTP_SENHA` `SMTP_FROM` `SMTP_SSL` | Envio de e-mail (Gmail: porta 587 + senha de app) |
+| `NFSE_DEV=1` | Só desenvolvimento local em HTTP (desliga o cookie “Secure”) |
+
+## Roteiro para entrar em produção
+1. **Configuração → Certificado**: envie o .pfx; defina `NFSE_CERT_SENHA`. Clique *Testar conexão com a Sefin* e *Testar convênio do município*.
+2. Confira o cadastro do prestador e o código **16.02.01 / 004**; defina pasta e e-mails; *Testar gravação* e *E-mail de teste*.
+3. Em **homologação**, emita 1 nota avulsa (“Emitir agora”), abra o PDF e compare com o modelo da JL.
+   Se a Sefin rejeitar o `cTribMun` (004), deixe o campo em branco na Configuração e tente de novo.
+4. Passe para **produção** (digite `PRODUCAO`), emita **1 nota real de teste** e confira no Portal Nacional.
+5. Só então crie os agendamentos — comece **sem** aprovação automática.
+
+## Rotinas de prevenção (a cada ~15 min)
+Alertas no painel (e por e-mail, uma vez cada): certificado vencendo (60/30/15/7 dias) ou vencido · nota não conferida
+a menos de 24 h do horário · nota atrasada · nota em *Verificar* · entrega de arquivos que falhou · agendador parado.
+Backup diário do banco (14 dias) em `<dados>/backups` e em `<pasta de saída>/_backup`.
+
+## Testes
+```bash
+pip install -r requirements-dev.txt && python -m pytest -q && ruff check .
+```
+Cobrem DPS (Simples/normal, id, regras de rejeições reais), assinatura (válida e à prova de adulteração), agenda,
+conferências, emissão (sucesso, rejeição, falha ambígua, reenvio, anexar XML, cancelamento), agendador, entrega e telas.
+
+## O que ainda depende de você (não dá para testar sem o certificado real)
+* A comunicação real com a Sefin só pode ser validada com o seu e-CNPJ: os testes simulam a resposta. Por isso o
+  roteiro acima começa em homologação.
+* `GET /dps/{id}` e `GET /nfse/{chave}` (usados em *Conferir na Sefin*) ainda não foram exercitados em produção por este
+  sistema; se não funcionarem, o sistema avisa e mantém a nota em *Verificar* (use *Anexar XML*).
+* `cTribMun` (código municipal 004) é enviado porque consta na nota modelo da JL, mas o sistema anterior não o enviava;
+  confirme em homologação.
+* A tabela de cidades/UF e o motor do DANFSe (`app/fiscal/danfse.py`, fontes e logo) foram copiados sem alteração do
+  sistema anterior.

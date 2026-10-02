@@ -1,0 +1,8 @@
+{% macro badge(status) %}<span class="badge {{ status|status_css }}">{{ status|status_label }}</span>{% endmacro %}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro lista_conferencia(lista) %}
+  <ul class="conferencia">
+  {% for p in lista %}<li class="{{ p.nivel }}"><b>{{ '✖' if p.nivel == 'erro' else '⚠' }}</b> {{ p.texto }}</li>{% endfor %}
+  {% if not lista %}<li class="ok"><b>✔</b> Tudo certo nas conferências automáticas.</li>{% endif %}
+  </ul>
+{% endmacro %}

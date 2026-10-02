@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% from "_macros.html" import csrf %}
+{% block corpo %}
+<h1>{{ 'Editar' if a and a.get('id') else 'Novo' }} agendamento</h1>
+<div class="cartao"><form method="post" class="grade">{{ csrf() }}
+ <label>Nome (para você se achar) <input name="nome" value="{{ a.get('nome','') if a else '' }}" required></label>
+ <label>Cliente <select name="cliente_id" required><option value="">Escolha…</option>{% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if a and a.get('cliente_id')|string == c.id|string }}>{{ c.nome }}</option>{% endfor %}</select></label>
+ <label>Valor (R$) <input name="valor" inputmode="decimal" placeholder="500,00" value="{{ a.get('valor','') if a else '' }}" required></label>
+ <label class="largo">Descrição do serviço <textarea name="descricao" rows="6" data-contador="cont" required>{{ a.get('descricao','') if a else '' }}</textarea>
+  <small class="suave">Pode usar <code>{data}</code>, <code>{mes}</code>, <code>{ano}</code>, <code>{mes_ano}</code> e <code>{competencia}</code>: o sistema troca pelos valores de cada emissão. Máximo 1297 caracteres. <span id="cont"></span></small></label>
+ <fieldset class="largo"><legend>Quando emitir</legend>
+  {% set freq = a.get('frequencia','mensal') if a else 'mensal' %}
+  <label class="check"><input type="radio" name="frequencia" value="mensal" {{ 'checked' if freq == 'mensal' }}> Todo mês, no dia <input class="curto" type="number" min="1" max="31" name="dia_mes" value="{{ a.get('dia_mes') or 1 if a else 1 }}"> <small class="suave">(dia 31 = último dia do mês, mesmo em meses menores)</small></label>
+  <label class="check"><input type="radio" name="frequencia" value="semanal" {{ 'checked' if freq == 'semanal' }}> Toda semana, na
+    <select name="dia_semana">{% for i, d in [(0,'segunda'),(1,'terça'),(2,'quarta'),(3,'quinta'),(4,'sexta'),(5,'sábado'),(6,'domingo')] %}<option value="{{ i }}" {{ 'selected' if a and a.get('dia_semana')|string == i|string }}>{{ d }}</option>{% endfor %}</select></label>
+  <label class="check"><input type="radio" name="frequencia" value="unica" {{ 'checked' if freq == 'unica' }}> Uma vez só, em <input type="date" name="data_unica" value="{{ a.get('data_unica') or '' if a else '' }}"></label>
+  <label>Hora da emissão <input class="curto" type="time" name="hora" value="{{ a.get('hora','09:00') if a else '09:00' }}" required></label>
+ </fieldset>
+ <label>Entra para conferência quantos dias antes? <input class="curto" type="number" min="1" max="30" name="antecedencia_dias" value="{{ a.get('antecedencia_dias', 3) if a else 3 }}"></label>
+ <label class="check largo"><input type="checkbox" name="auto_aprovar" {{ 'checked' if a and a.get('auto_aprovar') }}> Dispensar a conferência manual (o sistema aprova sozinho se as conferências automáticas passarem). <b>Não recomendado</b> no começo.</label>
+ <label class="check largo"><input type="checkbox" name="ativo" {{ 'checked' if not a or a.get('ativo') }}> Agendamento ativo (desmarque para pausar)</label>
+ {% if proxima %}<p class="largo suave">Próxima emissão: <b>{{ proxima.strftime('%Y-%m-%d %H:%M')|dt }}</b></p>{% endif %}
+ <div class="largo"><button class="botao grande">Salvar agendamento</button></div>
+</form></div>
+{% endblock %}

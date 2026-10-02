@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Notas</h1><a class="botao" href="{{ url_for('nota_nova') }}">+ Nova nota avulsa</a></div>
+<form method="get" class="filtros">
+  <select name="status"><option value="">Todas as situações</option>{% for k, v in STATUS.items() %}<option value="{{ k }}" {{ 'selected' if f.get('status') == k }}>{{ v[0] }}</option>{% endfor %}</select>
+  <input type="month" name="mes" value="{{ f.get('mes','') }}">
+  <select name="cliente"><option value="">Todos os clientes</option>{% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if f.get('cliente')|string == c.id|string }}>{{ c.nome }}</option>{% endfor %}</select>
+  <button class="botao pequeno">Filtrar</button>
+</form>
+<div class="cartao"><table><tr><th>Quando</th><th>Nº NFS-e</th><th>Cliente</th><th>Valor</th><th>Situação</th><th></th></tr>
+{% for n in lista %}<tr><td>{{ n.prevista_em|dt }}</td><td>{{ n.numero_nfse or '-' }}</td><td>{{ n.cliente }}</td><td>{{ n.valor_centavos|valor }}</td><td>{{ badge(n.status) }}</td><td><a href="{{ url_for('nota_detalhe', nid=n.id) }}">Abrir</a></td></tr>
+{% else %}<tr><td colspan="6" class="suave">Nenhuma nota encontrada.</td></tr>{% endfor %}</table></div>
+{% endblock %}

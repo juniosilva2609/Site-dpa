@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block corpo %}
+<div class="cartao estreito"><h1>Primeiro acesso</h1>
+<p>Crie o usuário administrador do sistema.</p>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  {% if pede_codigo %}<label>Código de instalação <input name="codigo" required></label>{% endif %}
+  <label>Seu nome <input name="nome"></label>
+  <label>Usuário <input name="login" required></label>
+  <label>Senha (mín. 8 caracteres) <input type="password" name="senha" required minlength="8" autocomplete="new-password"></label>
+  <label>Repita a senha <input type="password" name="senha2" required autocomplete="new-password"></label>
+  <button class="botao grande">Criar administrador</button>
+</form></div>
+{% endblock %}

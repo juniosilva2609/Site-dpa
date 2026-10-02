@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% from "_macros.html" import badge, csrf, lista_conferencia %}
+{% block corpo %}
+<div class="titulo-acoes"><h1>Nota #{{ n.id }} {{ badge(n.status) }}</h1><a href="{{ url_for('notas') }}">← Voltar às notas</a></div>
+{% if n.mensagem_erro %}<div class="aviso erro">{{ n.mensagem_erro }}</div>{% endif %}
+{% if n.ambiente == 'homologacao' and n.status in ('emitida','cancelada') %}<div class="faixa teste">Emitida em HOMOLOGAÇÃO (teste): sem validade jurídica.</div>{% endif %}
+
+{% if n.status in ('emitida','cancelada') %}
+<div class="cartao"><h2>NFS-e nº {{ n.numero_nfse or '-' }}</h2>
+ <p>Cliente: <b>{{ n.cliente }}</b> ({{ n.cliente_doc|doc }}) · Valor: <b>{{ n.valor_centavos|valor }}</b> · Emitida em {{ n.emitida_em|dt }}{% if n.cancelada_em %} · <b>Cancelada em {{ n.cancelada_em|dt }}</b> ({{ n.motivo_cancelamento }}){% endif %}</p>
+ <p class="chave">Chave de acesso: {{ n.chave_acesso }}</p>
+ <p class="acoes"><a class="botao" href="{{ url_for('nota_arquivo', nid=n.id, tipo='pdf', baixar=1) }}">Baixar PDF</a>
+   <a class="botao" href="{{ url_for('nota_arquivo', nid=n.id, tipo='pdf') }}" target="_blank">Ver PDF</a>
+   <a class="botao" href="{{ url_for('nota_arquivo', nid=n.id, tipo='xml') }}">Baixar XML</a></p>
+ <h3>Entrega dos arquivos</h3>
+ <ul class="conferencia">
+  {% if cfg.salvar_em_pasta %}<li class="{{ 'ok' if n.pdf_path and not n.pasta_erro else 'erro' }}"><b>{{ '✔' if n.pdf_path and not n.pasta_erro else '✖' }}</b> Pasta: {{ n.pdf_path or 'ainda não salvo' }} {{ n.pasta_erro or '' }}</li>{% endif %}
+  {% if cfg.enviar_por_email %}<li class="{{ 'ok' if n.email_enviado_em and not n.email_erro else 'erro' }}"><b>{{ '✔' if n.email_enviado_em and not n.email_erro else '✖' }}</b> E-mail: {{ ('enviado em ' ~ (n.email_enviado_em|dt)) if n.email_enviado_em else 'ainda não enviado' }} {{ n.email_erro or '' }}</li>{% endif %}
+  {% if not cfg.salvar_em_pasta and not cfg.enviar_por_email %}<li class="aviso-l">Entrega automática desligada (Configuração).</li>{% endif %}
+ </ul>
+ {% if cfg.salvar_em_pasta or cfg.enviar_por_email %}<form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='entregar') }}">{{ csrf() }}<button class="botao pequeno">Entregar de novo (pasta/e-mail)</button></form>{% endif %}
+</div>
+{% if n.status == 'emitida' and g.usuario.admin %}
+<details class="cartao"><summary>Cancelar esta NFS-e</summary>
+ <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='cancelar') }}" class="grade" data-confirmar="Cancelar a NFS-e {{ n.numero_nfse }} junto à Sefin? Isso não pode ser desfeito.">{{ csrf() }}
+  <label>Motivo <select name="motivo">{% for k, v in motivos.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></label>
+  <label class="largo">Explique (mín. 15 caracteres) <input name="texto" minlength="15" required></label>
+  <button class="botao perigo">Cancelar NFS-e</button></form></details>
+{% endif %}
+{% endif %}
+
+{% if n.status == 'verificar' %}
+<div class="cartao"><h2>Como resolver</h2>
+ <p>Não temos certeza se a Sefin autorizou esta nota. <b>Não emita por outro lugar antes de conferir.</b></p>
+ <p class="suave">DPS: {{ n.id_dps }}</p>
+ <div class="acoes">
+ <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='consultar') }}">{{ csrf() }}<button class="botao">1) Conferir na Sefin</button></form>
+ <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='emitir') }}" data-confirmar="Tentar emitir de novo? Use o mesmo número de DPS, então a Sefin não aceita duplicar.">{{ csrf() }}<button class="botao">2) Tentar emitir de novo (mesmo número)</button></form>
+ </div>
+ <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='anexar-xml') }}" enctype="multipart/form-data" class="linha">{{ csrf() }}
+  <label>3) Já está no Portal Nacional? Anexe o XML baixado de lá: <input type="file" name="xml" accept=".xml" required></label><button class="botao pequeno">Anexar XML</button></form>
+</div>
+{% endif %}
+
+{% if editavel %}
+<div class="cartao"><h2>Conferência</h2>{{ lista_conferencia(problemas) }}
+ <div class="acoes">
+  {% if n.status != 'aprovada' %}<form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='aprovar') }}">{{ csrf() }}<button class="botao grande" {{ 'disabled' if bloqueada }}>✔ Conferi: aprovar emissão</button></form>
+  {% else %}<p>✔ Aprovada por <b>{{ n.conferido_por }}</b>. Será emitida em <b>{{ n.prevista_em|dt }}</b>.</p>
+   <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='desaprovar') }}">{{ csrf() }}<button class="botao pequeno">Desfazer aprovação</button></form>{% endif %}
+  <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='emitir') }}" data-confirmar="Emitir esta NFS-e AGORA ({{ 'em PRODUÇÃO, com validade jurídica' if cfg.ambiente == 'producao' else 'em homologação/teste' }})?">{{ csrf() }}<button class="botao {{ 'perigo' if cfg.ambiente == 'producao' }}" {{ 'disabled' if bloqueada }}>Emitir agora</button></form>
+  <form method="post" action="{{ url_for('nota_acao', nid=n.id, acao='pular') }}" data-confirmar="Esta nota não será emitida. Continuar?">{{ csrf() }}<button class="botao claro">Pular (não emitir)</button></form>
+ </div>
+</div>
+<div class="cartao"><h2>Dados da nota</h2>
+<form method="post" class="grade">{{ csrf() }}
+ <label>Cliente <select name="cliente_id" required>{% for c in clientes %}<option value="{{ c.id }}" {{ 'selected' if c.id == n.cliente_id }}>{{ c.nome }}</option>{% endfor %}</select></label>
+ <label>Data de emissão <input type="date" name="prevista_data" value="{{ n.prevista_em[:10] }}" required></label>
+ <label>Hora <input type="time" name="prevista_hora" value="{{ n.prevista_em[11:16] }}" required></label>
+ <label>Valor (R$) <input name="valor" inputmode="decimal" value="{{ '%d,%02d'|format(n.valor_centavos // 100, n.valor_centavos % 100) }}" required></label>
+ <label class="largo">Descrição do serviço <textarea name="descricao" rows="7" data-contador="cont" required>{{ n.descricao }}</textarea>
+  <small class="suave">Máximo {{ limite }} caracteres. <span id="cont"></span></small></label>
+ <label>Competência (opcional) <input type="date" name="competencia" value="{{ n.competencia or '' }}"></label>
+ <div class="largo"><button class="botao">Salvar alterações</button> <small class="suave">Alterar volta a nota para "A conferir".</small></div>
+</form></div>
+{% elif n.status not in ('emitida','cancelada') %}
+<div class="cartao"><p>Cliente: <b>{{ n.cliente }}</b> · Valor: <b>{{ n.valor_centavos|valor }}</b> · Previsto: {{ n.prevista_em|dt }}</p></div>
+{% endif %}
+
+{% if not editavel %}<details class="cartao"><summary>Descrição do serviço</summary><pre class="descricao">{{ n.descricao }}</pre></details>{% endif %}
+<details class="cartao"><summary>Histórico</summary><table>{% for h in hist %}<tr><td>{{ h.em }}</td><td>{{ h.usuario }}</td><td>{{ h.acao }}</td><td>{{ h.detalhe }}</td></tr>{% endfor %}</table></details>
+{% endblock %}

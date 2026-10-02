@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block corpo %}
+<div class="cartao estreito"><h1>Entrar</h1>
+<form method="post">
+  <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+  <label>Usuário <input name="login" autocomplete="username" required autofocus></label>
+  <label>Senha <input type="password" name="senha" autocomplete="current-password" required></label>
+  <button class="botao grande">Entrar</button>
+</form></div>
+{% endblock %}
