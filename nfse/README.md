@@ -63,7 +63,7 @@ export NFSE_CERT_SENHA='senha-do-certificado'
 export NFSE_DEV=1                           # SÓ para teste local em HTTP
 python run.py                               # http://127.0.0.1:8000
 ```
-Em produção: `gunicorn wsgi:app --workers 1 --threads 4 --timeout 120` (ver `Procfile`/`render.yaml`), sempre com HTTPS.
+Em produção: `gunicorn wsgi:app --workers 1 --threads 4 --timeout 120` (ver `Procfile` e o `render.yaml` na raiz do repositório), sempre com HTTPS.
 **Use 1 worker**: o agendador roda numa thread do próprio servidor (há trava no banco, mas 1 processo é o suportado).
 Sem servidor sempre ligado? `python run.py ciclo` roda um ciclo e sai (use no cron a cada minuto).
 

@@ -1,0 +1,39 @@
+# Publicação em um clique no Render: Dashboard > New > Blueprint > escolha este repositório.
+# O sistema de NFS-e fica na pasta nfse/. Plano pago + disco: o plano gratuito "dorme" e perde arquivos,
+# e então as notas agendadas não sairiam no horário.
+services:
+  - type: web
+    name: nfse-automatica
+    runtime: python
+    plan: starter
+    rootDir: nfse
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn wsgi:app --workers 1 --threads 4 --timeout 120 --bind 0.0.0.0:$PORT
+    healthCheckPath: /saude
+    pythonVersion: "3.12"
+    disk:
+      name: dados
+      mountPath: /var/data
+      sizeGB: 1
+    envVars:
+      - key: NFSE_PROXY
+        value: "1"
+      - key: NFSE_DATA_DIR
+        value: /var/data
+      - key: NFSE_SAIDA_DIR
+        value: /var/data/saida
+      - key: SECRET_KEY
+        generateValue: true
+      # Preencha no painel do Render depois de criar (sync: false = o valor nunca vai para o git):
+      - key: NFSE_SETUP_CODE        # código para criar o administrador em /primeiro-acesso
+        sync: false
+      - key: NFSE_CERT_SENHA        # senha do certificado e-CNPJ
+        sync: false
+      - key: SMTP_HOST              # ex.: smtp.gmail.com
+        sync: false
+      - key: SMTP_USER
+        sync: false
+      - key: SMTP_SENHA             # senha de app do Gmail
+        sync: false
+      - key: NFSE_BACKUP_EMAIL      # "1" = manda o backup diário por e-mail (opcional)
+        sync: false
