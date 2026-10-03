@@ -6,6 +6,13 @@ de cada mês). Só cobre bancos com `integracao.status: ativo` em
 cadastro, pendente de certificado, bloqueado por rede etc.) entra no
 relatório como pendente, sem travar os outros bancos.
 
+Status `manual` (ex: C6 da Licitprint enquanto o cadastro no C6
+Developers não é aprovado): não há download pela automação — a equipe
+exporta o extrato do mês e salva na pasta do banco. No disparo do dia 1 a
+Rotina cria a pasta do mês anterior se faltar e põe um lembrete no
+relatório; a auditoria mensal do dia 2 confere se o PDF está lá e cobre o
+mês inteiro (ver `docs/setup-bancos.md`).
+
 **Desde a auditoria de 09/2026, os passos 1-4 e 7-8 abaixo são código
 determinístico e testado** (`connectors/runner.py`, `connectors/dedup.py`,
 `connectors/nomenclatura.py`, `connectors/retry.py`), não mais só uma

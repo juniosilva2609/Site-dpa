@@ -66,7 +66,7 @@ def configurar_logging(caminho_log: str | Path = "logs/fechamento.log") -> None:
 class ResultadoBanco:
     empresa_id: str
     banco_id: str
-    status: str  # "baixado" | "indisponivel" | "erro"
+    status: str  # "baixado" | "indisponivel" | "manual" | "erro"
     motivo: str | None = None
     # nome_final -> (conteudo, status_dedup: "novo" | "existente" | "nova_versao")
     arquivos: dict[str, tuple[bytes, str]] = field(default_factory=dict)
@@ -104,6 +104,10 @@ def processar_banco(
     """
     empresa_id, banco_id = empresa["id"], banco["id"]
     existentes_por_tipo = existentes_por_tipo or {}
+
+    if banco["integracao"].get("status") == "manual":
+        logger.info("empresa=%s banco=%s status=manual", empresa_id, banco_id)
+        return ResultadoBanco(empresa_id, banco_id, "manual", motivo="extrato enviado manualmente")
 
     try:
         conector = _construir_conector(banco, empresa)

@@ -130,35 +130,56 @@ contrato confirmado por chamada real:
   especificação técnica e a doc funcional do Portal) documentado no
   docstring de `connectors/santander.py`.
 
-## C6 Bank (Licitprint) — ⏳ pendente de cadastro
+## C6 Bank (Licitprint) — 🖐️ ponte manual (cadastro no C6 Developers em andamento)
 
 Fonte: [C6 Developers](https://developers.c6bank.com.br/). Conta PJ (C6
-Empresas). Autenticação OAuth2 `client_credentials` + mTLS (certificado
-.crt + chave .key emitidos pelo próprio C6), mesmo modelo do Inter/Santander.
-A rede deste ambiente já alcança os hosts da API do C6
-(`baas-api.c6bank.info`), conferido em 02/10/2026.
+Empresas), agência `0001`, conta `428529984`. Autenticação OAuth2
+`client_credentials` + mTLS (certificado .crt + chave .key emitidos pelo
+próprio C6), mesmo modelo do Inter/Santander. A rede deste ambiente já
+alcança os hosts da API do C6 (`baas-api.c6bank.info`), conferido em
+02/10/2026.
 
-1. Acesse o internet banking do **C6 Empresas** da Licitprint (computador).
-2. Clique nos **três pontinhos** ao lado do nome da empresa →
-   **Integrações via API** → **Nova chave**.
-3. Campo **Parceiro**: o C6 vincula a chave a um parceiro. Se for possível
-   gerar sem um parceiro de terceiros, siga; se exigir parceiro cadastrado,
-   o caminho é o onboarding no portal C6 Developers (sandbox → evidências →
-   termo de uso → aprovação para produção).
-4. Permissões: **somente saldo/extrato**. Nada de Pix, pagamentos,
-   transferências ou boletos.
-5. Confirme com senha + token do app. O C6 mostra **ClientID** e
-   **ClientSecret** e oferece um **.zip com .crt e .key** — **baixe na hora**,
-   não é possível baixar de novo depois.
+**O C6 exige parceiro.** Em 03/10/2026 confirmamos que o campo
+"Parceiro" de Integrações via API → Nova chave (internet banking) é
+obrigatório: a chave fica vinculada a um parceiro cadastrado no C6. Por isso
+a própria Licitprint precisa se cadastrar como parceira:
 
-Variáveis de ambiente esperadas (ver `config/empresas.yaml`):
-`DPA_LICITPRINT_C6_CLIENT_ID`, `DPA_LICITPRINT_C6_CLIENT_SECRET`,
-`DPA_LICITPRINT_C6_CERT_CRT`, `DPA_LICITPRINT_C6_CERT_KEY`.
+1. Cadastro da Licitprint no portal C6 Developers (CNPJ, e-mail
+   acompanhado, responsável técnico). Uso declarado: integração própria,
+   somente consulta de saldo/extrato da conta da própria empresa.
+2. E-mails de onboarding / Jornada de Integração com credenciais de
+   **sandbox** (ClientID, ClientSecret, certificado de teste).
+3. Implementar `connectors/c6.py` e testar no sandbox.
+4. Enviar as evidências de teste pedidas pelo C6 (sem segredos).
+5. Assinar o termo de responsabilidade de uso das APIs.
+6. Aprovação para produção → no internet banking, Integrações via API →
+   Nova chave, selecionar a Licitprint no campo Parceiro, marcar **somente
+   saldo/extrato** e baixar o .zip (.crt/.key) na hora (não dá para baixar
+   de novo).
 
-Periodicidade **mensal**: só roda no disparo do dia 01, baixando o mês
-anterior inteiro (competência `MM-AAAA`). Falta: agência/conta, o conector
-(`connectors/c6.py`, com endpoints confirmados por chamada real) e o teste
-de ponta a ponta antes de virar `status: ativo`.
+Há relatos de espera de semanas a cerca de 2 meses na liberação.
+
+Variáveis de ambiente esperadas quando virar API (ver
+`config/empresas.yaml`): `DPA_LICITPRINT_C6_CLIENT_ID`,
+`DPA_LICITPRINT_C6_CLIENT_SECRET`, `DPA_LICITPRINT_C6_CERT_CRT`,
+`DPA_LICITPRINT_C6_CERT_KEY`.
+
+### Ponte manual (até a aprovação)
+
+`integracao.status: manual` em `config/empresas.yaml`. Todo mês:
+
+1. No internet banking do C6 Empresas, exportar o extrato do **mês
+   anterior inteiro** (dia 01 ao último dia) em PDF — e em OFX/Excel, se o
+   C6 oferecer.
+2. Salvar em `FINANCEIRO/{MM}/C6 Bank/` (mesma pasta que a equipe já
+   usava). A Rotina do dia 1 cria essa pasta se ela ainda não existir e
+   lembra no relatório.
+3. A auditoria mensal do dia 2 abre o PDF, confere se o período no texto
+   cobre o mês inteiro e avisa se estiver faltando ou errado. Os nomes de
+   arquivo da equipe não são alterados.
+
+Periodicidade **mensal**: quando virar API, roda só no disparo do dia 01,
+baixando o mês anterior inteiro (competência `MM-AAAA`).
 
 ## Como as credenciais ficam guardadas neste ambiente
 

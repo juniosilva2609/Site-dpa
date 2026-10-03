@@ -182,3 +182,14 @@ def test_banco_mensal_baixa_mes_inteiro_no_disparo_do_dia_1(tmp_path, monkeypatc
         ("quinzenal", date(2026, 9, 16), date(2026, 9, 30)),
         ("mensal", date(2026, 9, 1), date(2026, 9, 30)),
     ]
+
+
+def test_banco_manual_nao_chama_conector(monkeypatch):
+    def _nao_deveria_chamar(banco, empresa):
+        raise AssertionError("banco manual não deve construir conector")
+
+    monkeypatch.setitem(runner.FABRICAS_CONECTOR, "falso-ok", _nao_deveria_chamar)
+    banco_manual = {"id": "c6", "conta": "1", "integracao": {"status": "manual", "provider": "falso-ok"}}
+    resultado = runner.processar_banco(EMPRESA, banco_manual, date(2026, 9, 1), date(2026, 9, 30), _montar_nome)
+    assert resultado.status == "manual"
+    assert resultado.arquivos == {}

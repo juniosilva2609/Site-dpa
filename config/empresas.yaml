@@ -146,19 +146,21 @@ empresas:
             chave_privada: DPA_LICITPRINT_INTER_CERT_KEY
 
       - id: c6
-        nome_exibicao: "C6"
+        nome_exibicao: "C6 Bank"           # mesmo nome de pasta que a equipe já usa
         codigo_padrao_nome: "C6"
-        conta: "a_informar"
-        agencia: "a_informar"
+        conta: "428529984"
+        agencia: "0001"
         # Só no disparo do dia 1, mês anterior inteiro (competência MM-AAAA).
         periodicidade: mensal
         integracao:
           tipo: api_oficial
           provider: c6_bank
-          # Aguardando a chave de API gerada no internet banking C6 Empresas
-          # (Integrações via API → Nova chave) — ver docs/setup-bancos.md.
-          # Conector (connectors/c6.py) ainda não implementado.
-          status: pendente_cadastro
+          # O C6 exige um parceiro cadastrado para gerar a chave de API: a
+          # Licitprint está se cadastrando no portal C6 Developers (ver
+          # docs/setup-bancos.md). Até a aprovação, ponte manual: a equipe
+          # exporta o PDF do mês no internet banking e salva em
+          # FINANCEIRO/{MM}/C6 Bank/; a auditoria do dia 2 confere.
+          status: manual
           escopo_necessario: "saldo/extrato (somente leitura)"
           credenciais_env:
             client_id: DPA_LICITPRINT_C6_CLIENT_ID
