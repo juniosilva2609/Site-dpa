@@ -22,7 +22,7 @@ empresas:
         nome_exibicao: "Inter"
         codigo_padrao_nome: "INTER"          # usado no nome do arquivo
         conta: "3620284-3"
-        agencia: "0001"
+        agencia: "0001-9"
         integracao:
           tipo: api_oficial
           provider: banco_inter
@@ -87,6 +87,7 @@ empresas:
 
   - id: c3s
     razao_social: "C3S Assessoria Contábil Ltda"
+    cnpj: "47.553.447/0001-51"
     status: ativo
 
     # Estrutura de pastas própria da C3S (já usada antes da automação):
@@ -100,7 +101,7 @@ empresas:
         nome_exibicao: "Inter"
         codigo_padrao_nome: "INTER"
         conta: "23578844-9"
-        agencia: "0001"
+        agencia: "0001-9"
         integracao:
           tipo: api_oficial
           provider: banco_inter
@@ -116,6 +117,7 @@ empresas:
 
   - id: licitprint
     razao_social: "Licitprint Comunicação Visual Ltda"
+    cnpj: "65.942.303/0001-79"
     status: ativo
 
     # Estrutura de pastas própria da Licitprint (já usada antes da
@@ -128,7 +130,7 @@ empresas:
         nome_exibicao: "Inter"
         codigo_padrao_nome: "INTER"
         conta: "52437086-9"
-        agencia: "0001"
+        agencia: "0001-9"
         integracao:
           tipo: api_oficial
           provider: banco_inter

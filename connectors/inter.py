@@ -5,34 +5,31 @@ Credenciais vêm só de variáveis de ambiente (nunca hardcoded, nunca logadas):
   DPA_INTER_CERT_CRT (caminho do arquivo .crt),
   DPA_INTER_CERT_KEY (caminho do arquivo .key)
 
-Contrato confirmado por teste real em produção (16/09/2026):
+Contrato confirmado por teste real em produção (16/09/2026 e 06/10/2026):
   - Token: POST /oauth/v2/token (client_id + client_secret +
     grant_type=client_credentials + scope=extrato.read, mTLS).
-  - Extrato (lista de lançamentos, JSON): GET /banking/v2/extrato
-    ?dataInicio=AAAA-MM-DD&dataFim=AAAA-MM-DD — devolve só
-    `{"transacoes": [...]}`, sem saldo.
-  - Extrato em PDF nativo: GET /banking/v2/extrato/exportar
-    (mesmos parâmetros de data) — devolve `{"pdf": "<base64>"}`.
-    Confirmado que parâmetros de formato (`tipoArquivo`, `formato`) são
-    ignorados: esse endpoint só devolve PDF, nunca OFX/Excel.
-  - Não existe exportação nativa de OFX nem Excel nessa API — por isso
-    este conector gera os dois localmente a partir do JSON de transações
-    (mesmo padrão usado no conector do Sicoob).
-
-Sobre o PDF: o endpoint nativo devolve um PDF com fontes customizadas
-embutidas, grande demais para o limite de upload por chamada da
-integração com o Google Drive usada por este projeto. Por isso o PDF
-salvo no Drive é gerado localmente (`inter_pdf.gerar_pdf`, via
-reportlab, fontes padrão sem embutimento) a partir do mesmo JSON de
-transações — não é o extrato oficial do banco (isso é explicitado no
-próprio rodapé do PDF gerado). O PDF nativo do banco pode ser obtido
-diretamente pelo app/site do Inter quando o documento oficial for
-necessário.
+  - Extrato (JSON): GET /banking/v2/extrato?dataInicio=AAAA-MM-DD&dataFim=...
+    — `{"transacoes": [...]}` com o texto que o banco exibe no PDF
+    (`descricao` = "PIX ENVIADO - Cp :...").
+  - Extrato completo (JSON, paginado): GET /banking/v2/extrato/completo
+    (mesmas datas + pagina/tamanhoPagina) — mesmos lançamentos com
+    `dataInclusao` e na ordem do PDF oficial (mais recente primeiro dentro
+    do dia); boletos trazem `detalhes.nossoNumero`.
+  - Saldo: GET /banking/v2/saldo — sem data devolve o saldo atual
+    (disponível + bloqueios); com `dataSaldo=AAAA-MM-DD` devolve o saldo
+    disponível ao fim daquele dia (conferido contra o PDF oficial).
+  - PDF nativo: GET /banking/v2/extrato/exportar — embute fontes grandes
+    demais para o limite de upload da integração com o Google Drive, então
+    não é usado; `inter_pdf.gerar_pdf` remonta o mesmo layout a partir dos
+    dados acima.
+  - Não existe exportação nativa de OFX nem Excel nessa API — este
+    conector gera os dois a partir do `/extrato`.
 """
 
 import hashlib
 import os
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 import requests
 
@@ -45,9 +42,10 @@ BASE_URL = "https://cdpj.partners.bancointer.com.br"
 class InterConnector(BankConnector):
     nome = "Inter"
 
-    def __init__(self, agencia: str, razao_social: str, credenciais_env: dict):
+    def __init__(self, agencia: str, razao_social: str, credenciais_env: dict, cnpj: str = ""):
         self.agencia = agencia
         self.razao_social = razao_social
+        self.cnpj = cnpj
         self.client_id = os.environ[credenciais_env["client_id"]]
         self.client_secret = os.environ[credenciais_env["client_secret"]]
         self.cert = (
@@ -76,26 +74,56 @@ class InterConnector(BankConnector):
             self.autenticar()
         return {"Authorization": f"Bearer {self._token}"}
 
-    def baixar_extrato(self, conta: str, inicio: date, fim: date) -> Extrato:
-        params = {"dataInicio": inicio.isoformat(), "dataFim": fim.isoformat()}
-
+    def _get(self, caminho: str, **params) -> dict:
         resp = requests.get(
-            f"{BASE_URL}/banking/v2/extrato",
-            headers=self._headers(),
-            params=params,
-            cert=self.cert,
-            timeout=30,
+            f"{BASE_URL}{caminho}", headers=self._headers(), params=params, cert=self.cert, timeout=30
         )
         resp.raise_for_status()
-        transacoes = resp.json().get("transacoes", [])
+        return resp.json()
+
+    def _extrato_completo(self, inicio: date, fim: date) -> list[dict]:
+        transacoes, pagina = [], 0
+        while True:
+            dados = self._get(
+                "/banking/v2/extrato/completo",
+                dataInicio=inicio.isoformat(),
+                dataFim=fim.isoformat(),
+                pagina=pagina,
+                tamanhoPagina=1000,
+            )
+            transacoes += dados.get("transacoes", [])
+            if dados.get("ultimaPagina", True):
+                return transacoes
+            pagina += 1
+
+    def baixar_extrato(self, conta: str, inicio: date, fim: date) -> Extrato:
+        datas = {"dataInicio": inicio.isoformat(), "dataFim": fim.isoformat()}
+        transacoes = self._get("/banking/v2/extrato", **datas).get("transacoes", [])
+        completo = self._extrato_completo(inicio, fim)
+        saldo_inicial = float(
+            self._get("/banking/v2/saldo", dataSaldo=(inicio - timedelta(days=1)).isoformat())["disponivel"]
+        )
+        saldo_final = float(self._get("/banking/v2/saldo", dataSaldo=fim.isoformat())["disponivel"])
+        saldo_atual = self._get("/banking/v2/saldo")
+
+        lancamentos = inter_pdf.montar_lancamentos(transacoes, completo)
+        calculado = round(saldo_inicial + sum(lanc["valor"] for lanc in lancamentos), 2)
+        if abs(calculado - saldo_final) > 0.005:
+            raise inter_pdf.ExtratoInconsistente(
+                f"saldo final calculado ({calculado:.2f}) difere do saldo do banco em {fim} ({saldo_final:.2f})"
+            )
 
         pdf = inter_pdf.gerar_pdf(
-            transacoes,
+            lancamentos,
+            saldo_inicial=saldo_inicial,
+            saldo_atual=saldo_atual,
             conta=conta,
             agencia=self.agencia,
             razao_social=self.razao_social,
+            cnpj=self.cnpj,
             inicio=inicio,
             fim=fim,
+            solicitado_em=datetime.now(ZoneInfo("America/Sao_Paulo")),
         )
         ofx = _gerar_ofx(transacoes, conta, inicio, fim).encode("utf-8")
         xlsx = _gerar_xlsx(transacoes)

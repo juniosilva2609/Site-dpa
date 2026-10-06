@@ -37,6 +37,7 @@ FABRICAS_CONECTOR: dict[str, Callable[[dict, dict], BankConnector]] = {
         agencia=banco["agencia"],
         razao_social=empresa["razao_social"],
         credenciais_env=banco["integracao"]["credenciais_env"],
+        cnpj=empresa.get("cnpj", ""),
     ),
     "sicoob_developers": lambda banco, empresa: SicoobConnector(
         cooperativa=banco["cooperativa"],

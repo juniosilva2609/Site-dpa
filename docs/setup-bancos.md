@@ -47,20 +47,24 @@ Variáveis de ambiente esperadas (ver `config/empresas.yaml`):
 - Token: `POST /oauth/v2/token` (client_id + client_secret +
   grant_type=client_credentials + escopo `extrato.read`, mTLS).
 - Lista de lançamentos (JSON): `GET /banking/v2/extrato?dataInicio=...&dataFim=...`.
-- PDF nativo: `GET /banking/v2/extrato/exportar` (mesmos parâmetros) —
-  devolve `{"pdf": "<base64>"}`. Parâmetros de formato (`tipoArquivo`,
-  `formato`) são ignorados: esse endpoint **só** devolve PDF. **Não é
-  usado por este conector** — vem com fontes embutidas grandes demais
-  para o limite de upload por chamada do Google Drive usado aqui.
-- **Não há exportação nativa de OFX nem Excel** nessa API — o conector
-  (`connectors/inter.py`) gera OFX, Excel e também o **PDF salvo no
-  Drive** localmente a partir do mesmo JSON de transações
-  (`connectors/inter_pdf.py`, via reportlab — fontes padrão, sem
-  embutimento, arquivo bem menor). Esse PDF não é o extrato oficial do
-  banco; o rodapé do documento deixa isso explícito. O PDF nativo pode
-  ser obtido direto no app/site do Inter quando o documento oficial for
-  necessário.
-- Agência e conta já informadas (`0001` / `3620284-3`), preenchidas em
+- Extrato completo (JSON, paginado): `GET /banking/v2/extrato/completo` —
+  mesmos lançamentos, na ordem do PDF oficial (mais recente primeiro
+  dentro do dia), com `nossoNumero` nos boletos.
+- Saldo: `GET /banking/v2/saldo` (saldo atual) e
+  `GET /banking/v2/saldo?dataSaldo=AAAA-MM-DD` (saldo ao fim do dia).
+- PDF nativo: `GET /banking/v2/extrato/exportar` — **não é usado**: embute
+  fontes grandes demais para o limite de upload da integração com o Google
+  Drive.
+- **PDF salvo no Drive = mesmo layout do PDF oficial do internet banking**
+  (`connectors/inter_pdf.py`, reportlab): saldo total/disponível/bloqueado
+  no topo, "Saldo do dia" em cada data e "Saldo por transação" em cada
+  linha, com os mesmos textos e a mesma ordem. Conferido em 06/10/2026
+  contra o PDF oficial da C3S de 09/2026: 85 de 85 lançamentos idênticos
+  (texto, valor e saldo). O conector recusa gerar o arquivo se o saldo
+  final calculado não bater com o saldo do banco no último dia do período.
+- **Não há exportação nativa de OFX nem Excel** nessa API — o conector gera
+  os dois a partir do `/extrato`.
+- Agência e conta já informadas (`0001-9` / `3620284-3`), preenchidas em
   `config/empresas.yaml`.
 
 ## Sicoob

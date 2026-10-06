@@ -1,61 +1,132 @@
 from datetime import date
+from io import BytesIO
 from unittest.mock import MagicMock, patch
 
 import pytest
 import requests
+from pypdf import PdfReader
 
+from connectors import inter_pdf
 from connectors.inter import InterConnector
 from connectors.santander import SantanderConnector
 from connectors.sicoob import SicoobConnector
 
 
-def test_inter_autentica_e_baixa_extrato(monkeypatch, tmp_path):
+INTER_ENV = {
+    "client_id": "DPA_INTER_CLIENT_ID",
+    "client_secret": "DPA_INTER_CLIENT_SECRET",
+    "certificado": "DPA_INTER_CERT_CRT",
+    "chave_privada": "DPA_INTER_CERT_KEY",
+}
+
+INTER_SIMPLES = [
+    {"dataEntrada": "2026-09-01", "tipoTransacao": "PIX", "tipoOperacao": "C", "valor": "100.0",
+     "titulo": "Pix recebido", "descricao": "PIX RECEBIDO - Cp :1234-Cliente X"},
+    {"dataEntrada": "2026-09-01", "tipoTransacao": "PIX", "tipoOperacao": "D", "valor": "30.0",
+     "titulo": "Pix enviado ", "descricao": "PIX ENVIADO - Cp :5678-Fornecedor Y"},
+]
+INTER_COMPLETO = [
+    {"dataTransacao": "2026-09-01", "dataInclusao": "2026-09-01 15:00:00.000", "tipoOperacao": "D",
+     "valor": "30.00", "titulo": "Pix enviado ", "descricao": "Fornecedor Y"},
+    {"dataTransacao": "2026-09-01", "dataInclusao": "2026-09-01 09:00:00.000", "tipoOperacao": "C",
+     "valor": "100.00", "titulo": "Pix recebido", "descricao": "Cliente X"},
+]
+
+
+def _resp(corpo):
+    resp = MagicMock(status_code=200)
+    resp.raise_for_status.return_value = None
+    resp.json.return_value = corpo
+    return resp
+
+
+def _fake_inter_get(saldo_fim=1070.0):
+    def fake_get(url, headers, params, cert, timeout):
+        if url.endswith("/banking/v2/extrato"):
+            return _resp({"transacoes": INTER_SIMPLES})
+        if url.endswith("/banking/v2/extrato/completo"):
+            return _resp({"transacoes": INTER_COMPLETO, "ultimaPagina": True})
+        if url.endswith("/banking/v2/saldo"):
+            por_data = {"2026-08-31": 1000.0, "2026-09-15": saldo_fim}
+            if "dataSaldo" in params:
+                return _resp({"disponivel": por_data[params["dataSaldo"]]})
+            return _resp({"disponivel": 900.0, "bloqueadoCheque": 0.0})
+        raise AssertionError(url)
+
+    return fake_get
+
+
+def _inter_conector(monkeypatch, tmp_path):
     monkeypatch.setenv("DPA_INTER_CLIENT_ID", "id")
     monkeypatch.setenv("DPA_INTER_CLIENT_SECRET", "secret")
     monkeypatch.setenv("DPA_INTER_CERT_CRT", str(tmp_path / "c.crt"))
     monkeypatch.setenv("DPA_INTER_CERT_KEY", str(tmp_path / "c.key"))
+    return InterConnector(agencia="0001-9", razao_social="Teste Ltda", credenciais_env=INTER_ENV,
+                          cnpj="00.000.000/0001-00")
 
-    token_resp = MagicMock(status_code=200)
-    token_resp.raise_for_status.return_value = None
-    token_resp.json.return_value = {"access_token": "tok123"}
 
-    extrato_resp = MagicMock(status_code=200)
-    extrato_resp.raise_for_status.return_value = None
-    extrato_resp.json.return_value = {
-        "transacoes": [
-            {
-                "dataEntrada": "2026-09-01",
-                "tipoTransacao": "PIX",
-                "tipoOperacao": "C",
-                "valor": "100.00",
-                "titulo": "Recebimento",
-                "descricao": "Cliente X",
-            }
-        ]
-    }
-
-    conector = InterConnector(
-        agencia="0001",
-        razao_social="Teste Ltda",
-        credenciais_env={
-            "client_id": "DPA_INTER_CLIENT_ID",
-            "client_secret": "DPA_INTER_CLIENT_SECRET",
-            "certificado": "DPA_INTER_CERT_CRT",
-            "chave_privada": "DPA_INTER_CERT_KEY",
-        },
-    )
-
-    with patch("connectors.inter.requests.post", return_value=token_resp) as post, patch(
-        "connectors.inter.requests.get", return_value=extrato_resp
-    ) as get:
+def test_inter_autentica_e_baixa_extrato_com_saldos(monkeypatch, tmp_path):
+    conector = _inter_conector(monkeypatch, tmp_path)
+    with patch("connectors.inter.requests.post", return_value=_resp({"access_token": "tok123"})) as post, patch(
+        "connectors.inter.requests.get", side_effect=_fake_inter_get()
+    ):
         extrato = conector.baixar_extrato("123456", date(2026, 9, 1), date(2026, 9, 15))
 
     post.assert_called_once()
-    get.assert_called_once()
     assert conector._token == "tok123"
-    assert extrato.pdf is not None
+    texto_pdf = "".join(pagina.extract_text() for pagina in PdfReader(BytesIO(extrato.pdf)).pages)
+    assert "Saldo do dia: R$ 1.070,00" in texto_pdf
+    assert 'Pix enviado: "Cp :5678-Fornecedor Y"' in texto_pdf
+    assert "R$ 900,00" in texto_pdf
     assert extrato.ofx is not None and b"<STMTTRN>" in extrato.ofx
     assert extrato.xlsx is not None
+
+
+def test_inter_saldo_que_nao_fecha_com_o_banco_falha(monkeypatch, tmp_path):
+    conector = _inter_conector(monkeypatch, tmp_path)
+    with patch("connectors.inter.requests.post", return_value=_resp({"access_token": "t"})), patch(
+        "connectors.inter.requests.get", side_effect=_fake_inter_get(saldo_fim=999.0)
+    ):
+        with pytest.raises(inter_pdf.ExtratoInconsistente, match="saldo final"):
+            conector.baixar_extrato("123456", date(2026, 9, 1), date(2026, 9, 15))
+
+
+def test_inter_lancamentos_seguem_ordem_do_completo_com_saldo_acumulado():
+    lancamentos = inter_pdf.com_saldos(inter_pdf.montar_lancamentos(INTER_SIMPLES, INTER_COMPLETO), 1000.0)
+    assert [(lanc["texto"], lanc["valor"], lanc["saldo"]) for lanc in lancamentos] == [
+        ('Pix enviado: "Cp :5678-Fornecedor Y"', -30.0, 970.0),
+        ('Pix recebido: "Cp :1234-Cliente X"', 100.0, 1070.0),
+    ]
+
+
+def test_inter_boletos_de_mesmo_valor_casam_pelo_nosso_numero():
+    simples = [
+        {"dataEntrada": "2026-09-10", "tipoOperacao": "C", "valor": "574.0",
+         "titulo": "Boleto de cobrança recebido", "descricao": f"RECEBIMENTO TITULO - 112/{n}"}
+        for n in ("111", "222")
+    ]
+    completo = [
+        {"dataTransacao": "2026-09-10", "tipoOperacao": "C", "valor": "574.00",
+         "titulo": "Boleto de cobrança recebido", "descricao": "X", "detalhes": {"nossoNumero": n}}
+        for n in ("222", "111")
+    ]
+    textos = [lanc["texto"] for lanc in inter_pdf.montar_lancamentos(simples, completo)]
+    assert textos == ['Boleto de cobranca recebido: "112/222"', 'Boleto de cobranca recebido: "112/111"']
+
+
+@pytest.mark.parametrize(
+    "titulo, descricao, descricao_completo, esperado",
+    [
+        ("Pagamento efetuado", "PAGAMENTO DARF - ", "DARF - Metalúrgica Amapá SA",
+         "Pagamento efetuado DARF - Metalurgica Amapa SA"),
+        ("Pagamento Simples Nacional", "PAGAMENTO SIMPLES NACIONAL - SIMPLES NACIONAL", "", "SIMPLES NACIONAL"),
+        ("Pagamento efetuado", "PAGAMENTO DE TITULO - ENERGIA E ÁGUA", "", 'Pagamento efetuado: "ENERGIA E AGUA"'),
+        ("Pix enviado ", "PIX ENVIADO - Cp :08561701-OAB  SP", "", 'Pix enviado: "Cp :08561701-OAB SP"'),
+    ],
+)
+def test_inter_texto_igual_ao_pdf_do_banco(titulo, descricao, descricao_completo, esperado):
+    simples = {"titulo": titulo, "descricao": descricao}
+    assert inter_pdf.texto_lancamento(simples, {"descricao": descricao_completo}) == esperado
 
 
 def test_inter_erro_401_propaga(monkeypatch, tmp_path):
