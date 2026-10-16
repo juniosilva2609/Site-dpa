@@ -185,16 +185,24 @@ Variáveis de ambiente esperadas quando virar API (ver
 Periodicidade **mensal**: quando virar API, roda só no disparo do dia 01,
 baixando o mês anterior inteiro (competência `MM-AAAA`).
 
-## Como as credenciais ficam guardadas neste ambiente
+## Como as credenciais ficam guardadas (desde 16/10/2026)
 
-Este ambiente não oferece um mecanismo de "variável de ambiente" permanente
-configurável por mim. Na prática, guardo cada credencial num arquivo local
-em `~/.dpa-secrets/<banco>.env` (fora do repositório, com permissão 600,
-nunca versionado — o `.gitignore` do repo também bloqueia qualquer `.env`,
-`.pem`, `.crt`, `.key` ou `.pfx` por segurança extra). A Rotina agendada
-reaproveita esta mesma sessão a cada disparo, então esse arquivo continua
-disponível de execução para execução; na hora de rodar um conector, eu
-carrego essas variáveis a partir dali antes de chamar a API do banco.
+Até 16/10/2026 cada credencial ficava em `~/.dpa-secrets/<banco>.env`, dentro
+da sessão fixa que a Rotina reaproveitava. Nesse dia a sessão quebrou (falha
+ao reclonar o repositório) e os arquivos se perderam junto com ela. As Rotinas
+passaram a abrir uma sessão nova a cada disparo, então as credenciais agora
+ficam nas **variáveis de ambiente do ambiente cloud** (claude.ai/code →
+ambiente da automação → Variáveis de ambiente), que valem para toda sessão
+nova. Quem cadastra é o titular, direto nessa tela — não pela conversa.
+
+Os nomes são os mesmos de `config/empresas.yaml`. Para certificado e chave
+(`*_CERT_CRT`, `*_CERT_KEY`, `*_CERT_PEM`) a variável pode ter o caminho do
+arquivo (modelo antigo) ou o próprio conteúdo em base64 numa linha só — o
+`connectors.base.arquivo_de_credencial` grava o conteúdo num arquivo
+temporário com permissão 600 na hora de chamar a API. Para gerar o base64:
+
+- Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\caminhorquivo.crt"))`
+- Linux/macOS: `base64 -w0 arquivo.crt`
 
 ## Como me repassar as credenciais
 

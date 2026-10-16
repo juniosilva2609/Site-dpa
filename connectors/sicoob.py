@@ -31,7 +31,7 @@ from datetime import date, datetime
 
 import requests
 
-from .base import BankConnector, Extrato
+from .base import BankConnector, Extrato, arquivo_de_credencial
 
 TOKEN_URL = "https://auth.sicoob.com.br/auth/realms/cooperado/protocol/openid-connect/token"
 API_BASE_URL = os.environ.get(
@@ -50,8 +50,8 @@ class SicoobConnector(BankConnector):
     def __init__(self, cooperativa: str, cooperativa_nome: str, razao_social: str, credenciais_env: dict):
         self.client_id = os.environ[credenciais_env["client_id"]]
         self.cert = (
-            os.environ[credenciais_env["certificado_pem"]],
-            os.environ[credenciais_env["chave_privada"]],
+            arquivo_de_credencial(credenciais_env["certificado_pem"]),
+            arquivo_de_credencial(credenciais_env["chave_privada"]),
         )
         self.cooperativa = cooperativa
         self.cooperativa_nome = cooperativa_nome

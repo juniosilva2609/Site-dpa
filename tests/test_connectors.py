@@ -363,3 +363,21 @@ def test_sicoob_erro_500_propaga(monkeypatch, tmp_path):
     with patch("connectors.sicoob.requests.post", return_value=resp):
         with pytest.raises(requests.exceptions.HTTPError):
             conector.autenticar()
+
+
+def test_credencial_aceita_caminho_pem_e_base64(monkeypatch):
+    import base64
+
+    from connectors.base import arquivo_de_credencial
+
+    pem = "-----BEGIN CERTIFICATE-----\nABC\n-----END CERTIFICATE-----\n"
+    monkeypatch.setenv("X_CAMINHO", "/tmp/c.crt")
+    assert arquivo_de_credencial("X_CAMINHO") == "/tmp/c.crt"
+
+    monkeypatch.setenv("X_PEM", pem.replace("\n", "\n"))
+    with open(arquivo_de_credencial("X_PEM")) as f:
+        assert f.read() == pem.strip()
+
+    monkeypatch.setenv("X_B64", base64.b64encode(pem.encode()).decode())
+    with open(arquivo_de_credencial("X_B64")) as f:
+        assert f.read() == pem

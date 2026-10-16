@@ -50,7 +50,7 @@ from datetime import date, datetime
 import requests
 
 from . import santander_pdf
-from .base import BankConnector, Extrato
+from .base import BankConnector, Extrato, arquivo_de_credencial
 
 BASE_URL = "https://trust-open.api.santander.com.br/bank_account_information/v1"
 TOKEN_URL = "https://trust-open.api.santander.com.br/auth/oauth/v2/token"
@@ -70,8 +70,8 @@ class SantanderConnector(BankConnector):
         self.client_id = os.environ[credenciais_env["client_id"]]
         self.client_secret = os.environ[credenciais_env["client_secret"]]
         self.cert = (
-            os.environ[credenciais_env["certificado"]],
-            os.environ[credenciais_env["chave_privada"]],
+            arquivo_de_credencial(credenciais_env["certificado"]),
+            arquivo_de_credencial(credenciais_env["chave_privada"]),
         )
         self._token: str | None = None
 

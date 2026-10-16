@@ -34,7 +34,7 @@ from zoneinfo import ZoneInfo
 import requests
 
 from . import inter_pdf
-from .base import BankConnector, Extrato
+from .base import BankConnector, Extrato, arquivo_de_credencial
 
 BASE_URL = "https://cdpj.partners.bancointer.com.br"
 
@@ -49,8 +49,8 @@ class InterConnector(BankConnector):
         self.client_id = os.environ[credenciais_env["client_id"]]
         self.client_secret = os.environ[credenciais_env["client_secret"]]
         self.cert = (
-            os.environ[credenciais_env["certificado"]],
-            os.environ[credenciais_env["chave_privada"]],
+            arquivo_de_credencial(credenciais_env["certificado"]),
+            arquivo_de_credencial(credenciais_env["chave_privada"]),
         )
         self._token: str | None = None
 
