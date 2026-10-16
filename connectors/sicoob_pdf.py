@@ -24,6 +24,7 @@ from reportlab.lib import colors
 from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
+from reportlab.pdfgen import canvas as rl_canvas
 from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 VERDE = colors.HexColor("#00995d")
@@ -31,6 +32,30 @@ VERDE_ESCURO = colors.HexColor("#1e7a4f")
 VERMELHO = colors.HexColor("#c0392b")
 CINZA = colors.HexColor("#666666")
 FUNDO_SALDO = colors.HexColor("#f2f6f4")
+
+
+class _CanvasNumerado(rl_canvas.Canvas):
+    """Escreve "Página X de Y" no rodapé de cada página, como no extrato
+    impresso do SISBR. Guarda o estado de cada página e só desenha no
+    `save`, quando o total de páginas já é conhecido."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self._paginas = []
+
+    def showPage(self):
+        self._paginas.append(dict(self.__dict__))
+        self._startPage()
+
+    def save(self):
+        total = len(self._paginas)
+        for estado in self._paginas:
+            self.__dict__.update(estado)
+            self.setFont("Helvetica", 7)
+            self.setFillColor(CINZA)
+            self.drawRightString(A4[0] - 12 * mm, 8 * mm, f"Página {self._pageNumber} de {total}")
+            super().showPage()
+        super().save()
 
 
 def _fmt_moeda(valor, sinal_credito_debito: bool = True) -> str:
@@ -167,6 +192,9 @@ def gerar_pdf(
                 ("LINEBELOW", (0, 0), (-1, 0), 0.5, colors.HexColor("#999999")),
                 ("ALIGN", (3, 0), (3, -1), "RIGHT"),
                 ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                # Valor na mesma linha da última linha do histórico
+                # (complemento), como no extrato do SISBR.
+                ("VALIGN", (3, 1), (3, -1), "BOTTOM"),
                 ("TOPPADDING", (0, 1), (-1, -1), 3),
                 ("BOTTOMPADDING", (0, 1), (-1, -1), 3),
                 *estilos_linha,
@@ -223,5 +251,5 @@ def gerar_pdf(
         )
     )
 
-    doc.build(elementos)
+    doc.build(elementos, canvasmaker=_CanvasNumerado)
     return buf.getvalue()
