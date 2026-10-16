@@ -201,7 +201,7 @@ arquivo (modelo antigo) ou o próprio conteúdo em base64 numa linha só — o
 `connectors.base.arquivo_de_credencial` grava o conteúdo num arquivo
 temporário com permissão 600 na hora de chamar a API. Para gerar o base64:
 
-- Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\caminhorquivo.crt"))`
+- Windows (PowerShell): `[Convert]::ToBase64String([IO.File]::ReadAllBytes("C:\pasta\arquivo.crt"))`
 - Linux/macOS: `base64 -w0 arquivo.crt`
 
 ## Como me repassar as credenciais
