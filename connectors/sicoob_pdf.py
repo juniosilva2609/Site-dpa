@@ -25,7 +25,7 @@ from reportlab.lib.pagesizes import A4
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.pdfgen import canvas as rl_canvas
-from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+from reportlab.platypus import KeepTogether, Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
 
 VERDE = colors.HexColor("#00995d")
 VERDE_ESCURO = colors.HexColor("#1e7a4f")
@@ -230,26 +230,25 @@ def gerar_pdf(
     )
     elementos.append(resumo)
 
-    elementos.append(Paragraph("OUTRAS INFORMAÇÕES", secao))
-    elementos.append(
+    # Fecho do extrato num bloco só, para o título "OUTRAS INFORMAÇÕES" não
+    # ficar sozinho no pé de uma página com o texto na seguinte.
+    fecho = [
+        Paragraph("OUTRAS INFORMAÇÕES", secao),
         Paragraph(
             "Condições de cheque especial (vencimento, taxa, CET) e encargos a vencer não são "
             "fornecidos por este endpoint da API do Sicoob — não exibidos para não apresentar "
             "valor não confirmado.",
             nota,
-        )
-    )
-
-    elementos.append(Paragraph("INFORMAÇÕES", secao))
-    elementos.append(Paragraph("SAC: 0800 724 4420 / OUVIDORIA SICOOB: 08007250996", info))
-
-    elementos.append(Spacer(1, 14))
-    elementos.append(
+        ),
+        Paragraph("INFORMAÇÕES", secao),
+        Paragraph("SAC: 0800 724 4420 / OUVIDORIA SICOOB: 08007250996", info),
+        Spacer(1, 14),
         Paragraph(
             "Gerado automaticamente a partir da API oficial do Sicoob — DPA / Fechamento Bancário.",
             rodape,
-        )
-    )
+        ),
+    ]
+    elementos.append(KeepTogether(fecho))
 
     doc.build(elementos, canvasmaker=_CanvasNumerado)
     return buf.getvalue()
