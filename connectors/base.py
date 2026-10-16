@@ -24,14 +24,14 @@ def arquivo_de_credencial(nome_env: str) -> str:
     porque o `requests` só aceita caminho no parâmetro `cert`.
     """
     valor = os.environ[nome_env].strip()
-    if valor.startswith("-----BEGIN"):
+    if "-----BEGIN" in valor:
         pem = valor.replace("\\n", "\n").encode()
     else:
         try:
             pem = base64.b64decode(valor, validate=True)
         except (binascii.Error, ValueError):
             return valor
-        if not pem.lstrip().startswith(b"-----BEGIN"):
+        if b"-----BEGIN" not in pem:
             return valor
     pasta = os.path.join(tempfile.gettempdir(), "dpa-certs")
     os.makedirs(pasta, mode=0o700, exist_ok=True)

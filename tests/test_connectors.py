@@ -381,3 +381,14 @@ def test_credencial_aceita_caminho_pem_e_base64(monkeypatch):
     monkeypatch.setenv("X_B64", base64.b64encode(pem.encode()).decode())
     with open(arquivo_de_credencial("X_B64")) as f:
         assert f.read() == pem
+
+
+def test_credencial_aceita_pem_com_bag_attributes(monkeypatch):
+    import base64
+
+    from connectors.base import arquivo_de_credencial
+
+    pem = "Bag Attributes\n    localKeyID: 01\n-----BEGIN PRIVATE KEY-----\nABC\n-----END PRIVATE KEY-----\n"
+    monkeypatch.setenv("X_BAG", base64.b64encode(pem.encode()).decode())
+    with open(arquivo_de_credencial("X_BAG")) as f:
+        assert f.read() == pem
