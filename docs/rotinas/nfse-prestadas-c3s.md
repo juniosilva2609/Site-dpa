@@ -5,6 +5,7 @@ recrie com estes dados — ver `docs/RECUPERACAO.md`.
 
 | Campo | Valor |
 |---|---|
+| ID (17/10/2026) | `trig_01VckNu8CQmo8NhzTauMeW6K` |
 | Agenda | `CRON_TZ=America/Sao_Paulo 20 0 1 * *` (dia 1, 00:20) |
 | Sessão | nova a cada execução (`persist_session: false`) |
 | Ambiente | `env_01Y2j6UdnhXHLqxdrGcx6DcL` (precisa liberar `adn.nfse.gov.br` na rede e ter `DPA_C3S_NFSE_CERT` / `DPA_C3S_NFSE_KEY`) |
