@@ -31,9 +31,12 @@ from pathlib import Path
 CNPJ_C3S = "47553447000151"
 # Uma entrada por empresa: CNPJ do prestador, variaveis com o e-CNPJ (PEM) e mapa CNPJ do cliente -> conta
 EMPRESAS = {
-    "c3s": {"cnpj": CNPJ_C3S, "cert": "DPA_C3S_NFSE_CERT", "key": "DPA_C3S_NFSE_KEY", "contas": "contas_clientes_c3s.json"},
+    "c3s": {"cnpj": CNPJ_C3S, "cert": "DPA_C3S_NFSE_CERT", "key": "DPA_C3S_NFSE_KEY", "contas": "contas_clientes_c3s.json",
+            "receita": 861, "iss": 1393, "nomes": None},
     "licitprint": {"cnpj": "65942303000179", "cert": "DPA_LICITPRINT_NFSE_CERT", "key": "DPA_LICITPRINT_NFSE_KEY",
-                   "contas": "contas_clientes_licitprint.json"},
+                   "contas": "contas_clientes_licitprint.json",
+                   # 1652 = prestacao de servicos. Conta do ISS retido da Licitprint ainda nao informada (None = linha em amarelo)
+                   "receita": 1652, "iss": None, "nomes": "plano_clientes_licitprint.json"},
 }
 ADN = "https://adn.nfse.gov.br/contribuintes/DFe/{nsu}"
 CONTA_RECEITA = 861
@@ -113,15 +116,34 @@ def notas_validas(docs: list[dict], ano: int, mes: int, cnpj: str = CNPJ_C3S) ->
     return sorted(notas, key=lambda n: (n.emissao, n.numero))
 
 
-def linhas(notas: list[Nota], contas: dict[str, dict]) -> list[tuple]:
+def _norm(t: str) -> str:
+    t = unicodedata.normalize("NFKD", t or "").encode("ascii", "ignore").decode().upper()
+    return re.sub(r"[^A-Z0-9]+", " ", t).strip()
+
+
+def conta_do_cliente(n: Nota, contas: dict[str, dict], por_nome: dict[str, int] | None = None) -> dict | None:
+    """Conta pelo CNPJ/CPF do tomador; senao pelo nome (o plano costuma truncar o nome, entao vale prefixo)."""
+    c = contas.get(n.cnpj_cliente)
+    if c or not por_nome or not n.cnpj_cliente:
+        return c
+    alvo = _norm(n.nome_xml)
+    for nome, conta in por_nome.items():
+        nn = _norm(nome)
+        if nn and (alvo.startswith(nn) or nn.startswith(alvo)):
+            return {"conta": conta, "nome": nome}
+    return None
+
+
+def linhas(notas: list[Nota], contas: dict[str, dict], por_nome: dict[str, int] | None = None,
+           receita: int = CONTA_RECEITA, iss_conta: int | None = CONTA_ISS_RETIDO) -> list[tuple]:
     out = []
     for n in notas:
-        c = contas.get(n.cnpj_cliente)
+        c = conta_do_cliente(n, contas, por_nome)
         nome = (c["nome"] if c else n.nome_xml).upper()
         conta = c["conta"] if c else None
-        out.append((n.emissao, n.numero, n.valor, nome, f"PREST. SERV. CONF. NFSE {n.numero} CLIENTE {nome}", conta, CONTA_RECEITA))
+        out.append((n.emissao, n.numero, n.valor, nome, f"PREST. SERV. CONF. NFSE {n.numero} CLIENTE {nome}", conta, receita))
         if n.iss_retido and n.iss:
-            out.append((n.emissao, n.numero, n.iss, nome, f"ISS RETIDO SERV. PREST. CONF. NFSE {n.numero} CLIENTE {nome}", CONTA_ISS_RETIDO, conta))
+            out.append((n.emissao, n.numero, n.iss, nome, f"ISS RETIDO SERV. PREST. CONF. NFSE {n.numero} CLIENTE {nome}", iss_conta, conta))
     return out
 
 
@@ -160,11 +182,14 @@ def main(competencia: str, pasta: str, empresa: str = "c3s") -> None:
     contas_arq = Path(__file__).with_name(cfg["contas"])
     contas = json.loads(contas_arq.read_text(encoding="utf-8")) if contas_arq.exists() else {}
     notas = notas_validas(docs, ano, mes, cfg["cnpj"])
-    ls = linhas(notas, contas)
+    por_nome = None
+    if cfg["nomes"] and Path(__file__).with_name(cfg["nomes"]).exists():
+        por_nome = json.loads(Path(__file__).with_name(cfg["nomes"]).read_text(encoding="utf-8"))
+    ls = linhas(notas, contas, por_nome, cfg["receita"], cfg["iss"])
     destino = Path(pasta) / f"IMPORT ALTERDATA NFSE SERV PREST {mes:02d}-{ano}.xlsx"
     gerar_excel(ls, destino)
     fora = canceladas(docs)
-    sem_conta = sorted({(n.cnpj_cliente, n.nome_xml) for n in notas if n.cnpj_cliente not in contas})
+    sem_conta = sorted({(n.cnpj_cliente, n.nome_xml) for n in notas if not conta_do_cliente(n, contas, por_nome)})
     print(json.dumps({
         "empresa": empresa, "arquivo": str(destino), "notas": len(notas), "linhas": len(ls),
         "total_bruto": round(sum(n.valor for n in notas), 2), "iss_retido": round(sum(n.iss for n in notas if n.iss_retido), 2),
