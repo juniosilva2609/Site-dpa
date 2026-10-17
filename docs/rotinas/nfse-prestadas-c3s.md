@@ -20,8 +20,7 @@
 >   se não estiver, manda e-mail para junioaraujo.adv@gmail.com.
 > - **Reinstalar do zero** (PC novo, pasta apagada): `git clone --branch
 >   claude/monthly-bank-closure-automation-d1huvk https://github.com/juniosilva2609/Site-dpa.git`,
->   depois `powershell -ExecutionPolicy Bypass -File ferramentas
-fse-c3s\instalar-nfse-c3s.ps1`
+>   depois `powershell -ExecutionPolicy Bypass -File ferramentas\nfse-c3s\instalar-nfse-c3s.ps1`
 >   (pede a senha do e-CNPJ; o .pfx fica em `G:\Drives compartilhados\C3S Assessoria Contábil\CERTIFICADO C3S`).
 > - Se o e-CNPJ for renovado (vence 21/08/2027), regere os PEM em `cert\`.
 
