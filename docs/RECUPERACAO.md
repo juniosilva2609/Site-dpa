@@ -10,7 +10,7 @@ credenciais, que só existiam dentro dela, se perderam.
 |---|---|---|
 | Código, config e documentação | GitHub, `juniosilva2609/Site-dpa`, branch `claude/monthly-bank-closure-automation-d1huvk` | o próprio GitHub |
 | Extratos | Google Drive de cada empresa | o próprio Drive (e o banco mantém o histórico) |
-| Configuração das Rotinas (agenda, prompt, conectores) | claude.ai/code → Rotinas | `docs/rotinas/*.md` |
+| Configuração das Rotinas (agenda, prompt, conectores) | claude.ai/code → Rotinas | `docs/rotinas/*.md` (fechamento quinzenal, auditoria mensal, NFS-e prestadas da C3S) |
 | Credenciais dos bancos | variáveis `DPA_*` do ambiente cloud em claude.ai/code | arquivo criptografado do titular (abaixo) |
 | Política de rede do ambiente (liberar os bancos) | configuração do ambiente cloud | descrita em `docs/setup-bancos.md` |
 
@@ -52,5 +52,6 @@ Refaça a cópia sempre que trocar alguma credencial ou certificado.
 | Inter DPA | 12/09/2027 |
 | Inter C3S | 17/09/2027 |
 | Inter Licitprint | 17/09/2027 |
+| e-CNPJ A1 da C3S (Portal Nacional da NFS-e) | 21/08/2027 |
 
 Ao renovar, atualize a variável no ambiente e refaça a cópia criptografada.
