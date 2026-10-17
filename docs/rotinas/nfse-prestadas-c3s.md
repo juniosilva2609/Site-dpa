@@ -1,5 +1,21 @@
 # Rotina: NFS-e prestadas da C3S → planilha de importação do Alterdata
 
+> **Execução atual (desde 17/10/2026): tarefa agendada no PC do Júnio**, não a
+> Rotina da nuvem. O Portal Nacional (`adn.nfse.gov.br`) derrubou a conexão
+> (`Connection reset by peer`) a partir do ambiente cloud mesmo com rede
+> completa; do PC funciona. A Rotina da nuvem (`trig_01VckNu8CQmo8NhzTauMeW6K`)
+> ficou **desligada** (`enabled: false`).
+>
+> - Tarefa do Windows: **`NFSe C3S - Alterdata`**, todo dia 1 às 07:00; se o
+>   PC estiver desligado, roda ao ligar (`StartWhenAvailable`).
+> - Script: `C:\Users\Junio\ferramentas-nfse-c3s\rodar-nfse-c3s.ps1`
+>   (`-Competencia AAAA-MM` para refazer um mês). Usa o clone
+>   `C:\Users\Junio\Site-dpa-nfse` (faz `git pull` antes) e o e-CNPJ em PEM em
+>   `ferramentas-nfse-c3s\cert` (acesso só do usuário).
+> - Grava em `G:\Drives compartilhados\C3S Interno\C3S - Interno\Financeiro C3S\Extratos\AAAA\MM\`
+>   e não sobrescreve. Log em `ferramentas-nfse-c3s\logs\AAAA-MM.log`.
+> - Se o e-CNPJ for renovado (vence 21/08/2027), regere os PEM em `cert\`.
+
 Cópia de segurança da configuração (sem nenhum segredo). Se a Rotina sumir,
 recrie com estes dados — ver `docs/RECUPERACAO.md`.
 
