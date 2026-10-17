@@ -55,3 +55,13 @@ Refaça a cópia sempre que trocar alguma credencial ou certificado.
 | e-CNPJ A1 da C3S (Portal Nacional da NFS-e) | 21/08/2027 |
 
 Ao renovar, atualize a variável no ambiente e refaça a cópia criptografada.
+
+## NFS-e prestadas da C3S (tarefa no PC)
+
+Roda no Windows do Júnio, não na nuvem (o Portal Nacional recusa o ambiente
+cloud). Tudo que é preciso para refazer está no GitHub e no Drive: código e
+instalador em `ferramentas/nfse-c3s/`, mapa de clientes em
+`nfse/contas_clientes_c3s.json`, e-CNPJ (.pfx) na pasta CERTIFICADO C3S do
+Drive da C3S (a senha fica no cofre de senhas do Júnio). Passo a passo em
+`docs/rotinas/nfse-prestadas-c3s.md`.
+

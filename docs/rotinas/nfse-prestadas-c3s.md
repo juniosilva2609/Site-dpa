@@ -4,7 +4,7 @@
 > Rotina da nuvem. O Portal Nacional (`adn.nfse.gov.br`) derrubou a conexão
 > (`Connection reset by peer`) a partir do ambiente cloud mesmo com rede
 > completa; do PC funciona. A Rotina da nuvem (`trig_01VckNu8CQmo8NhzTauMeW6K`)
-> ficou **desligada** (`enabled: false`).
+> foi **reaproveitada como verificadora** (ver abaixo).
 >
 > - Tarefa do Windows: **`NFSe C3S - Alterdata`**, todo dia 1 às 07:00; se o
 >   PC estiver desligado, roda ao ligar (`StartWhenAvailable`).
@@ -14,6 +14,15 @@
 >   `ferramentas-nfse-c3s\cert` (acesso só do usuário).
 > - Grava em `G:\Drives compartilhados\C3S Interno\C3S - Interno\Financeiro C3S\Extratos\AAAA\MM\`
 >   e não sobrescreve. Log em `ferramentas-nfse-c3s\logs\AAAA-MM.log`.
+> - **Aviso de erro:** se a execução falhar, aparece um balão do Windows na tela;
+>   além disso, a Rotina `trig_01VckNu8CQmo8NhzTauMeW6K` ("Verificador NFS-e C3S")
+>   roda nos dias 1 e 3 às 12:00, confere se o arquivo do mês está no Drive e,
+>   se não estiver, manda e-mail para junioaraujo.adv@gmail.com.
+> - **Reinstalar do zero** (PC novo, pasta apagada): `git clone --branch
+>   claude/monthly-bank-closure-automation-d1huvk https://github.com/juniosilva2609/Site-dpa.git`,
+>   depois `powershell -ExecutionPolicy Bypass -File ferramentas
+fse-c3s\instalar-nfse-c3s.ps1`
+>   (pede a senha do e-CNPJ; o .pfx fica em `G:\Drives compartilhados\C3S Assessoria Contábil\CERTIFICADO C3S`).
 > - Se o e-CNPJ for renovado (vence 21/08/2027), regere os PEM em `cert\`.
 
 Cópia de segurança da configuração (sem nenhum segredo). Se a Rotina sumir,
