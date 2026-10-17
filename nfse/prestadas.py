@@ -10,7 +10,7 @@ Cada nota vira uma linha com o valor bruto (débito = conta do cliente, crédito
 = 861). Quando o ISS foi retido pelo tomador, vem logo abaixo uma segunda linha
 com só o valor do ISS (débito 1393, crédito = conta do cliente).
 
-Uso:  python -m nfse.prestadas AAAA-MM <pasta de saída>
+Uso:  python -m nfse.prestadas AAAA-MM <pasta de saída> [c3s|licitprint]
 Credenciais (variáveis de ambiente, mesmo formato dos bancos): DPA_C3S_NFSE_CERT e
 DPA_C3S_NFSE_KEY (PEM ou PEM em base64, ver connectors/base.py).
 """
@@ -29,13 +29,18 @@ from datetime import date
 from pathlib import Path
 
 CNPJ_C3S = "47553447000151"
+# Uma entrada por empresa: CNPJ do prestador, variaveis com o e-CNPJ (PEM) e mapa CNPJ do cliente -> conta
+EMPRESAS = {
+    "c3s": {"cnpj": CNPJ_C3S, "cert": "DPA_C3S_NFSE_CERT", "key": "DPA_C3S_NFSE_KEY", "contas": "contas_clientes_c3s.json"},
+    "licitprint": {"cnpj": "65942303000179", "cert": "DPA_LICITPRINT_NFSE_CERT", "key": "DPA_LICITPRINT_NFSE_KEY",
+                   "contas": "contas_clientes_licitprint.json"},
+}
 ADN = "https://adn.nfse.gov.br/contribuintes/DFe/{nsu}"
 CONTA_RECEITA = 861
 CONTA_ISS_RETIDO = 1393
 # Eventos que tiram a nota da base: cancelamento, cancelamento por substituição
 # (o evento aponta a nota SUBSTITUÍDA) e cancelamento deferido por análise fiscal.
 EVENTOS_QUE_CANCELAM = {"e101101", "e105102", "e105104"}
-CONTAS = Path(__file__).with_name("contas_clientes_c3s.json")
 
 
 @dataclass
@@ -55,12 +60,12 @@ def _tag(xml: str, nome: str) -> str | None:
     return html.unescape(m.group(1)) if m else None
 
 
-def baixar_dfe(cert: tuple[str, str]) -> list[dict]:
+def baixar_dfe(cert: tuple[str, str], cnpj: str = CNPJ_C3S) -> list[dict]:
     import requests
 
     docs, nsu = [], 0
     while True:
-        r = requests.get(ADN.format(nsu=nsu), params={"cnpjConsulta": CNPJ_C3S, "lote": "true"}, cert=cert, timeout=90)
+        r = requests.get(ADN.format(nsu=nsu), params={"cnpjConsulta": cnpj, "lote": "true"}, cert=cert, timeout=90)
         if r.status_code == 404:  # E2220: nenhum documento além deste NSU
             break
         r.raise_for_status()
@@ -87,7 +92,7 @@ def canceladas(docs: list[dict]) -> set[str]:
     return chaves
 
 
-def notas_validas(docs: list[dict], ano: int, mes: int) -> list[Nota]:
+def notas_validas(docs: list[dict], ano: int, mes: int, cnpj: str = CNPJ_C3S) -> list[Nota]:
     fora = canceladas(docs)
     notas = []
     for d in docs:
@@ -96,7 +101,7 @@ def notas_validas(docs: list[dict], ano: int, mes: int) -> list[Nota]:
         x = d["xml"]
         emit = re.search(r"<emit><CNPJ>(\d+)</CNPJ>", x)
         dh = _tag(x, "dhEmi") or ""
-        if not emit or emit.group(1) != CNPJ_C3S or dh[:7] != f"{ano:04d}-{mes:02d}" or _tag(x, "cStat") != "100":
+        if not emit or emit.group(1) != cnpj or dh[:7] != f"{ano:04d}-{mes:02d}" or _tag(x, "cStat") != "100":
             continue
         toma = re.search(r"<toma>.*?</toma>", x, re.S).group(0)
         doc = re.search(r"<(?:CNPJ|CPF)>(\d+)<", toma)
@@ -145,23 +150,26 @@ def gerar_excel(linhas_: list[tuple], destino: Path) -> None:
     wb.save(destino)
 
 
-def main(competencia: str, pasta: str) -> None:
+def main(competencia: str, pasta: str, empresa: str = "c3s") -> None:
     from connectors.base import arquivo_de_credencial
 
+    cfg = EMPRESAS[empresa]
     ano, mes = map(int, competencia.split("-"))
-    docs = baixar_dfe((arquivo_de_credencial("DPA_C3S_NFSE_CERT"), arquivo_de_credencial("DPA_C3S_NFSE_KEY")))
-    contas = json.loads(CONTAS.read_text(encoding="utf-8"))
-    notas = notas_validas(docs, ano, mes)
+    docs = baixar_dfe((arquivo_de_credencial(cfg["cert"]), arquivo_de_credencial(cfg["key"])), cfg["cnpj"])
+    contas_arq = Path(__file__).with_name(cfg["contas"])
+    contas = json.loads(contas_arq.read_text(encoding="utf-8")) if contas_arq.exists() else {}
+    notas = notas_validas(docs, ano, mes, cfg["cnpj"])
     ls = linhas(notas, contas)
     destino = Path(pasta) / f"IMPORT ALTERDATA NFSE SERV PREST {mes:02d}-{ano}.xlsx"
     gerar_excel(ls, destino)
+    fora = canceladas(docs)
     sem_conta = sorted({(n.cnpj_cliente, n.nome_xml) for n in notas if n.cnpj_cliente not in contas})
     print(json.dumps({
-        "arquivo": str(destino), "notas": len(notas), "linhas": len(ls),
+        "empresa": empresa, "arquivo": str(destino), "notas": len(notas), "linhas": len(ls),
         "total_bruto": round(sum(n.valor for n in notas), 2), "iss_retido": round(sum(n.iss for n in notas if n.iss_retido), 2),
-        "canceladas_ou_substituidas_no_mes": sum(1 for d in docs if d["ChaveAcesso"] in canceladas(docs) and (_tag(d["xml"], "dhEmi") or "")[:7] == f"{ano:04d}-{mes:02d}"),
+        "canceladas_ou_substituidas_no_mes": sum(1 for d in docs if d["ChaveAcesso"] in fora and (_tag(d["xml"], "dhEmi") or "")[:7] == f"{ano:04d}-{mes:02d}"),
         "clientes_sem_conta": sem_conta}, ensure_ascii=False))
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2])
+    main(*sys.argv[1:4])

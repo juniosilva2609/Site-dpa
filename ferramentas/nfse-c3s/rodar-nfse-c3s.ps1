@@ -2,18 +2,25 @@
 # Roda pela tarefa agendada "NFSe C3S - Alterdata" (dia 1, 07:00). Grava no Drive da C3S:
 #   Financeiro C3S\Extratos\AAAA\MM\IMPORT ALTERDATA NFSE SERV PREST MM-AAAA.xlsx
 param([string]$Competencia,   # AAAA-MM; vazio = mes anterior a hoje
-      [string]$Drive)         # so para teste: pasta de destino alternativa
+      [string]$Drive,         # so para teste: pasta de destino alternativa
+      [ValidateSet("c3s","licitprint")][string]$Empresa = "c3s")
 
 $ErrorActionPreference = "Stop"
 $base   = "C:\Users\Junio\ferramentas-nfse-c3s"
 $repo   = "C:\Users\Junio\Site-dpa-nfse"
 $python = "C:\Users\Junio\AppData\Local\Python\pythoncore-3.14-64\python.exe"
-$drive0 = "G:\Drives compartilhados\C3S Interno\C3S - Interno\Financeiro C3S\Extratos"
+if ($Empresa -eq "c3s") {
+    $drive0 = "G:\Drives compartilhados\C3S Interno\C3S - Interno\Financeiro C3S\Extratos"   # AAAA\MM
+    $comAno = $true
+} else {
+    $drive0 = "J:\Meu Drive\CONTABILIDADE\FINANCEIRO"   # MM (pasta FINANCEIRO da Licitprint, sem ano)
+    $comAno = $false
+}
 
 $drive = if ($Drive) { $Drive } else { $drive0 }
 if (-not $Competencia) { $Competencia = (Get-Date -Day 1).AddMonths(-1).ToString("yyyy-MM") }
 $ano, $mes = $Competencia.Split("-")
-$log = Join-Path $base "logs\$Competencia.log"
+$log = Join-Path $base "logs\$Empresa-$Competencia.log"
 function Log($m) { "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $m" | Tee-Object -FilePath $log -Append }
 
 try {
@@ -22,21 +29,22 @@ try {
     if (-not (Test-Path $drive)) { throw "Pasta do Drive nao encontrada: $drive" }
 
     $nome    = "IMPORT ALTERDATA NFSE SERV PREST $mes-$ano.xlsx"
-    $destDir = Join-Path $drive "$ano\$mes"
+    $destDir = if ($comAno) { Join-Path $drive "$ano\$mes" } else { Join-Path $drive $mes }
     $destino = Join-Path $destDir $nome
     if (Test-Path $destino) { Log "Ja existia, nada a fazer: $destino"; exit 0 }
 
     Log "Competencia $Competencia"
     & git -C $repo pull --ff-only 2>&1 | ForEach-Object { Log "git: $_" }
 
-    $env:DPA_C3S_NFSE_CERT = Join-Path $base "cert\c3s_cert.pem"
-    $env:DPA_C3S_NFSE_KEY  = Join-Path $base "cert\c3s_key.pem"
-    $tmp = Join-Path $env:TEMP "nfse-c3s-$Competencia"
+    $pre = $Empresa.ToUpper()
+    Set-Item "env:DPA_${pre}_NFSE_CERT" (Join-Path $base "cert\${Empresa}_cert.pem")
+    Set-Item "env:DPA_${pre}_NFSE_KEY"  (Join-Path $base "cert\${Empresa}_key.pem")
+    $tmp = Join-Path $env:TEMP "nfse-$Empresa-$Competencia"
     New-Item -ItemType Directory -Force $tmp | Out-Null
 
     Push-Location $repo
     $ErrorActionPreference = "Continue"
-    $saida = & $python -m nfse.prestadas $Competencia $tmp 2>&1
+    $saida = & $python -m nfse.prestadas $Competencia $tmp $Empresa 2>&1
     $codigo = $LASTEXITCODE
     $ErrorActionPreference = "Stop"
     Pop-Location
@@ -61,7 +69,7 @@ try {
         $n = New-Object System.Windows.Forms.NotifyIcon
         $n.Icon = [System.Drawing.SystemIcons]::Error
         $n.Visible = $true
-        $n.ShowBalloonTip(20000, "NFS-e C3S - Alterdata", "Falhou em $Competencia. Veja $log", [System.Windows.Forms.ToolTipIcon]::Error)
+        $n.ShowBalloonTip(20000, "NFS-e C3S - Alterdata", "Falhou ($Empresa) em $Competencia. Veja $log", [System.Windows.Forms.ToolTipIcon]::Error)
         Start-Sleep -Seconds 21
         $n.Dispose()
     } catch {}
