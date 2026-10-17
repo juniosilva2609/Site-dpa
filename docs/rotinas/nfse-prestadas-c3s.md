@@ -68,3 +68,17 @@ Gere a planilha de importação do Alterdata com as NFS-e de serviços PRESTADOS
 
 Somente leitura no Portal Nacional: nunca emita, cancele ou altere nota. Nunca exponha certificado, chave ou senha em logs, relatório ou mensagens.
 ```
+
+## Licitprint (mesma planilha, desde 17/10/2026)
+
+- Tarefa do Windows **`NFSe Licitprint - Alterdata`**, dia 1 às 07:10:
+  `rodar-nfse-c3s.ps1 -Empresa licitprint` (refazer um mês: `-Competencia AAAA-MM`).
+- Prestador: Licitprint Comunicação Visual Ltda, CNPJ 65.942.303/0001-79. Certificado: gerar os PEM com
+  `ferramentas\nfse-c3s\preparar-certificado.ps1 -Empresa licitprint -Pfx "J:\Meu Drive\Certificado Digital\LICITPRINT COMUNICACAO VISUAL LTDA65942303000179.pfx"`
+  (pede a senha no terminal).
+- Grava em `J:\Meu Drive\CONTABILIDADE\FINANCEIRO\MM\` (= pasta FINANCEIRO do Drive da Licitprint, sem pasta de ano).
+- Contas: débito = cliente (`nfse/plano_clientes_licitprint.json`, por nome, e `nfse/contas_clientes_licitprint.json`,
+  por CNPJ); nota sem tomador identificado = CONSUMIDOR FINAL (35); **crédito = 1652** (prestação de serviços).
+  A conta do ISS retido da Licitprint não foi informada: se houver nota com ISS retido, a linha sai em amarelo.
+- Setembro/2026: 7 NFS-e válidas, R$ 11.438,82; as nº 31 e 36 foram canceladas/substituídas e ficaram de fora.
+- O Verificador na nuvem (dias 1 e 3, 12:00) confere as duas empresas.
