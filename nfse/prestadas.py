@@ -103,12 +103,13 @@ def notas_validas(docs: list[dict], ano: int, mes: int, cnpj: str = CNPJ_C3S) ->
         dh = _tag(x, "dhEmi") or ""
         if not emit or emit.group(1) != cnpj or dh[:7] != f"{ano:04d}-{mes:02d}" or _tag(x, "cStat") != "100":
             continue
-        toma = re.search(r"<toma>.*?</toma>", x, re.S).group(0)
+        m_toma = re.search(r"<toma>.*?</toma>", x, re.S)   # tomador pode nao ser identificado na nota
+        toma = m_toma.group(0) if m_toma else ""
         doc = re.search(r"<(?:CNPJ|CPF)>(\d+)<", toma)
         notas.append(Nota(
             chave=d["ChaveAcesso"], numero=int(_tag(x, "nNFSe")), emissao=date.fromisoformat(dh[:10]),
             valor=float(_tag(x, "vServ")), iss=float(_tag(x, "vISSQN") or 0), iss_retido=_tag(x, "tpRetISSQN") == "2",
-            cnpj_cliente=doc.group(1) if doc else "", nome_xml=_tag(toma, "xNome") or ""))
+            cnpj_cliente=doc.group(1) if doc else "", nome_xml=_tag(toma, "xNome") or "TOMADOR NAO IDENTIFICADO"))
     return sorted(notas, key=lambda n: (n.emissao, n.numero))
 
 
